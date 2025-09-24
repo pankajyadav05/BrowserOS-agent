@@ -11,7 +11,7 @@
    yarn
    ```
 
-2. **Copy a `.env.example` into `.env` file in the root directory**
+2. **Copy a `.env.example` into `.env` file in the root directory and set LITELLM_API_KEY**
    ```
    cp .env.example .env
    ```
