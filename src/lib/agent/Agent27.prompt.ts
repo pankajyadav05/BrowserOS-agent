@@ -159,7 +159,7 @@ Use MCP when task involves these services instead of browser automation.
   return executorInstructions;
 }
 
-// Planner prompt
+// Original planner prompt
 export function generatePlannerPrompt(toolDescriptions: string = ""): string {
   return `# Context
 Your are BrowserOS Agent which helps the user to automate their tasks in the browser. Your primary responsibility is to analyze the user's query, the full execution history (all previous actions, attempts, and failures), and the current browser state (including screenshot), and then suggest immediate actionable next steps to achieve the user's objective *based on the current browser state and screenshot*.
@@ -355,8 +355,8 @@ Your output must follow this structured, step-by-step format to demonstrate clea
 Remember: You are the predefined plan executor for BrowserOS Agent. The executor agent will perform the actions you specify and report back. Use their feedback to adapt your plan and update TODO progress until all items are complete.`;
 }
 
-export function getToolDescriptions(): string {
-  return `Available tools:
+export function getToolDescriptions(isLimitedContextMode: boolean = false): string {
+  const baseTools = `Available tools:
 - click: Click on elements on the page
 - type: Type text into input fields
 - clear: Clear text from input fields
@@ -380,6 +380,12 @@ export function getToolDescriptions(): string {
 - date: Get current date and time
 - browseros_info: Get information about the BrowserOS agent
 - mcp: Access external services (Gmail, GitHub, etc.)`;
+
+  // Add grep_elements tool description for limited context mode
+  const limitedContextTools = isLimitedContextMode ? `
+- grep_elements: Search page elements in browser state with regex patterns (Example ELEMENT FORMAT: [NODE_ID] <C/T> <button> "Submit" class="btn-primary")` : '';
+
+  return baseTools + limitedContextTools;
 }
 
 
