@@ -206,7 +206,7 @@ export class NewAgent27 {
     this.executionContext = executionContext;
     this.toolManager = new ToolManager(executionContext);
     this.glowService = GlowAnimationService.getInstance();
-    Logging.log("NewAgent", "Agent instance created", "info");
+    Logging.log("NewAgent27", "Agent instance created", "info");
   }
 
   private get executorMessageManager(): MessageManager {
@@ -245,7 +245,7 @@ export class NewAgent27 {
     this.iterations = 0;
 
     Logging.log(
-      "NewAgent",
+      "NewAgent27",
       `Initialization complete with ${this.toolManager.getAll().length} tools bound`,
       "info",
     );
@@ -300,7 +300,7 @@ export class NewAgent27 {
     this.toolDescriptions = getToolDescriptions(this.executionContext.isLimitedContextMode());
 
     Logging.log(
-      "NewAgent",
+      "NewAgent27",
       `Registered ${this.toolManager.getAll().length} tools`,
       "info",
     );
@@ -316,7 +316,7 @@ export class NewAgent27 {
         startTime: Date.now(),
       });
 
-      Logging.log("NewAgent", `Starting execution`, "info");
+      Logging.log("NewAgent27", `Starting execution`, "info");
       await this._initialize();
 
       // Check for predefined plan
@@ -378,7 +378,7 @@ export class NewAgent27 {
       this.iterations++;
 
       Logging.log(
-        "NewAgent",
+        "NewAgent27",
         `Predefined plan iteration ${this.iterations}/${MAX_PREDEFINED_PLAN_ITERATIONS}`,
         "info"
       );
@@ -388,7 +388,7 @@ export class NewAgent27 {
 
       if (!planResult.ok) {
         Logging.log(
-          "NewAgent",
+          "NewAgent27",
           `Predefined planning failed: ${planResult.error}`,
           "error"
         );
@@ -412,7 +412,7 @@ export class NewAgent27 {
       // Validate we have actions
       if (!plan.proposedActions || plan.proposedActions.length === 0) {
         Logging.log(
-          "NewAgent",
+          "NewAgent27",
           "Predefined planner provided no actions but TODOs not complete",
           "warning"
         );
@@ -424,7 +424,7 @@ export class NewAgent27 {
       }
 
       Logging.log(
-        "NewAgent",
+        "NewAgent27",
         `Executing ${plan.proposedActions.length} actions for current TODO`,
         "info"
       );
@@ -459,7 +459,7 @@ export class NewAgent27 {
       );
     }
 
-    Logging.log("NewAgent", `Predefined plan execution complete`, "info");
+    Logging.log("NewAgent27", `Predefined plan execution complete`, "info");
   }
 
   private async _executeDynamic(task: string): Promise<void> {
@@ -482,7 +482,7 @@ export class NewAgent27 {
       this.iterations++;
 
       Logging.log(
-        "NewAgent",
+        "NewAgent27",
         `Planning iteration ${this.iterations}/${MAX_PLANNER_ITERATIONS}`,
         "info",
       );
@@ -493,7 +493,7 @@ export class NewAgent27 {
 
       if (!planResult.ok) {
         Logging.log(
-          "NewAgent",
+          "NewAgent27",
           `Planning failed: ${planResult.error}`,
           "error",
         );
@@ -523,7 +523,7 @@ export class NewAgent27 {
       // Validate we have actions if not complete
       if (!plan.proposedActions || plan.proposedActions.length === 0) {
         Logging.log(
-          "NewAgent",
+          "NewAgent27",
           "Planner provided no actions but task not complete",
           "warning",
         );
@@ -535,7 +535,7 @@ export class NewAgent27 {
       }
 
       Logging.log(
-        "NewAgent",
+        "NewAgent27",
         `Executing ${plan.proposedActions.length} actions from plan`,
         "info",
       );
@@ -669,7 +669,7 @@ export class NewAgent27 {
 
       const systemPromptTokens = TokenCounter.countMessage(new SystemMessage(systemPrompt));
       const fullHistoryTokens = TokenCounter.countMessage(new HumanMessage(fullHistory));
-      Logging.log("NewAgent", `Full execution history tokens: ${fullHistoryTokens}`, "info");
+      Logging.log("NewAgent27", `Full execution history tokens: ${fullHistoryTokens}`, "info");
 
       // If full history exceeds 70% of max tokens, summarize it
       if (fullHistoryTokens + systemPromptTokens > this.executionContext.getMaxTokens() * 0.7) {
@@ -686,7 +686,7 @@ export class NewAgent27 {
         });
       }
 
-      Logging.log("NewAgent", `Full execution history: ${fullHistory}`, "info");
+      Logging.log("NewAgent27", `Full execution history: ${fullHistory}`, "info");
 
       // Get LLM with structured output
       const llm = await getLLM({
@@ -748,7 +748,7 @@ ${fullHistory}
 
       // Log planner decision
       Logging.log(
-        "NewAgent",
+        "NewAgent27",
         result.taskComplete
           ? `Planner: Task complete with final answer`
           : `Planner: ${result.proposedActions.length} actions planned`,
@@ -888,7 +888,7 @@ ${fullHistory}
 
     // Hit max iterations without explicit completion
     Logging.log(
-      "NewAgent",
+      "NewAgent27",
       `Executor hit max iterations (${MAX_EXECUTOR_ITERATIONS})`,
       "warning",
     );
@@ -960,7 +960,7 @@ ${fullHistory}
             );
             
             // Log for debugging
-            Logging.log("NewAgent", 
+            Logging.log("NewAgent27", 
               "LLM output contained prohibited tags, streaming stopped", 
               "warning"
             );
@@ -1040,7 +1040,7 @@ ${fullHistory}
 
       let toolResult: string;
       if (!tool) {
-        Logging.log("NewAgent", `Unknown tool: ${toolName}`, "warning");
+        Logging.log("NewAgent27", `Unknown tool: ${toolName}`, "warning");
         const errorMsg = `Unknown tool: ${toolName}`;
         toolResult = JSON.stringify({
           ok: false,
@@ -1070,7 +1070,7 @@ ${fullHistory}
           this.executionContext.incrementMetric("errors");
 
           Logging.log(
-            "NewAgent",
+            "NewAgent27",
             `Tool ${toolName} execution failed: ${error}`,
             "error",
           );
@@ -1133,12 +1133,12 @@ ${fullHistory}
 
   private _handleExecutionError(error: unknown): void {
     if (error instanceof AbortError) {
-      Logging.log("NewAgent", "Execution aborted by user", "info");
+      Logging.log("NewAgent27", "Execution aborted by user", "info");
       return;
     }
 
     const errorMessage = error instanceof Error ? error.message : String(error);
-    Logging.log("NewAgent", `Execution error: ${errorMessage}`, "error");
+    Logging.log("NewAgent27", `Execution error: ${errorMessage}`, "error");
 
     this._publishMessage(`Error: ${errorMessage}`, "error");
   }
@@ -1161,7 +1161,7 @@ ${fullHistory}
     });
 
     Logging.log(
-      "NewAgent",
+      "NewAgent27",
       `Execution complete: ${this.iterations} iterations, ${metrics.toolCalls} tool calls, ` +
         `${metrics.observations} observations, ${metrics.errors} errors, ` +
         `${successRate}% success rate, ${duration}ms duration`,
@@ -1171,7 +1171,7 @@ ${fullHistory}
     // Log tool frequency if any tools were called
     if (metrics.toolCalls > 0) {
       Logging.log(
-        "NewAgent",
+        "NewAgent27",
         `Tool frequency: ${JSON.stringify(toolFrequency)}`,
         "info",
       );
@@ -1191,7 +1191,7 @@ ${fullHistory}
   private _cleanup(): void {
     this.iterations = 0;
     this.plannerExecutionHistory = [];
-    Logging.log("NewAgent", "Cleanup complete", "info");
+    Logging.log("NewAgent27", "Cleanup complete", "info");
   }
 
   /**
@@ -1294,7 +1294,7 @@ ${fullHistory}
       const systemPrompt = generatePredefinedPlannerPrompt(this.toolDescriptions || "");
       const systemPromptTokens = TokenCounter.countMessage(new SystemMessage(systemPrompt));
       const fullHistoryTokens = TokenCounter.countMessage(new HumanMessage(fullHistory));
-      Logging.log("NewAgent", `Full execution history tokens: ${fullHistoryTokens}`, "info");
+      Logging.log("NewAgent27", `Full execution history tokens: ${fullHistoryTokens}`, "info");
       if (fullHistoryTokens + systemPromptTokens > this.executionContext.getMaxTokens() * 0.7) {
         const summary = await this.summarizeExecutionHistory(fullHistory);
 
@@ -1379,7 +1379,7 @@ ${fullHistory}
 
       // Log planner decision
       Logging.log(
-        "NewAgent",
+        "NewAgent27",
         plan.allTodosComplete
           ? `Predefined Planner: All TODOs complete with final answer`
           : `Predefined Planner: ${plan.proposedActions.length} actions planned for current TODO`,
