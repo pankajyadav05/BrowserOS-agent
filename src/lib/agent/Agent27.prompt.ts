@@ -371,6 +371,7 @@ export function getToolDescriptions(isLimitedContextMode: boolean = false): stri
 - tab_focus: Switch between tabs
 - tab_close: Close browser tabs
 - extract: Extract data from web pages
+- celebration: Show confetti animation
 - human_input: Request human assistance
 - done: Mark tasks as complete
 - visual_click: Click elements using visual descriptions
