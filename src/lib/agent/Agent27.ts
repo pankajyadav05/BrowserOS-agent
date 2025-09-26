@@ -331,7 +331,7 @@ export class NewAgent27 {
               "Navigate to https://dub.sh/browseros-launch",
               "Find and click the upvote button on the page using visual_click",
               "Use celebration tool to show confetti animation"
-            ]
+            ]  
           }
         }
       };
