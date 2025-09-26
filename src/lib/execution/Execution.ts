@@ -2,9 +2,7 @@ import { z } from "zod";
 import { BrowserContext } from "@/lib/browser/BrowserContext";
 import { ExecutionContext } from "@/lib/runtime/ExecutionContext";
 import { MessageManager } from "@/lib/runtime/MessageManager";
-import { BrowserAgent } from "@/lib/agent/BrowserAgent";
 import { NewAgent } from "@/lib/agent/NewAgent";
-import { NewAgent27 } from "@/lib/agent/Agent27";
 import { ChatAgent } from "@/lib/agent/ChatAgent";
 import { langChainProvider } from "@/lib/llm/LangChainProvider";
 import { Logging } from "@/lib/utils/Logging";
@@ -12,6 +10,7 @@ import { PubSubChannel } from "@/lib/pubsub/PubSubChannel";
 import { PubSub } from "@/lib/pubsub";
 import { ExecutionMetadata } from "@/lib/types/messaging";
 import { getFeatureFlags } from "@/lib/utils/featureFlags";
+import { isUserCancellation } from "@/lib/utils/Abortable";
 // Evals2: session, scoring, and logging
 import { ENABLE_EVALS2 } from "@/config";
 import { BraintrustEventManager } from "@/evals2/BraintrustEventManager";
@@ -187,12 +186,11 @@ export class Execution {
         }
       }
 
+      // Show warning if NEW_AGENT feature flag is not enabled
       if (!getFeatureFlags().isEnabled('NEW_AGENT') && this.options.mode !== 'chat') {
         executionContext.getPubSub().publishMessage({
           msgId: "old_agent_notice",
-          content: `⚠️ **Note**: You are using the older version of agent.
-
-Upgrade to the latest BrowserOS version from [GitHub Releases](https://github.com/browseros-ai/BrowserOS/releases) to access the new and improved agent!`,
+          content: `⚠️ **Note**: You are using older version for Browser, upgrade to new one. The current agent won't work.`,
           role: "assistant",
           ts: Date.now(),
         });
@@ -202,9 +200,7 @@ Upgrade to the latest BrowserOS version from [GitHub Releases](https://github.co
       const agent =
         this.options.mode === "chat"
           ? new ChatAgent(executionContext)
-          : getFeatureFlags().isEnabled('NEW_AGENT')
-            ? new NewAgent(executionContext)
-            : new BrowserAgent(executionContext);
+          : new NewAgent(executionContext);
 
       // Execute
       await agent.execute(query, metadata || this.options.metadata);
@@ -252,7 +248,7 @@ Upgrade to the latest BrowserOS version from [GitHub Releases](https://github.co
             score,
             durationMs,
             {
-              agent: this.options.mode === 'chat' ? 'ChatAgent' : (getFeatureFlags().isEnabled('NEW_AGENT') ? 'NewAgent' : 'BrowserAgent'),
+              agent: this.options.mode === 'chat' ? 'ChatAgent' : 'NewAgent',
               provider: provider?.name,
               model: provider?.modelId,
             },
@@ -274,21 +270,17 @@ Upgrade to the latest BrowserOS version from [GitHub Releases](https://github.co
         `Completed execution in ${Date.now() - startTime}ms`,
       );
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      const wasCancelled =
-        error instanceof Error && error.name === "AbortError";
-
-      if (!wasCancelled) {
+      if (!isUserCancellation(error)) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         this.pubsub?.publishMessage({
           msgId: `error_main`,
           content: `❌ Error: ${errorMessage}`,
           role: "error",
           ts: Date.now(),
         });
+        throw error;  // Only re-throw if NOT cancelled
       }
-
-      throw error;
+      // Don't throw if it was cancelled - just return normally
     } finally {
       // Clear abort controller after run completes
       this.currentAbortController = null;
