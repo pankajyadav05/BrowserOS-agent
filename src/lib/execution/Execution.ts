@@ -2,7 +2,8 @@ import { z } from "zod";
 import { BrowserContext } from "@/lib/browser/BrowserContext";
 import { ExecutionContext } from "@/lib/runtime/ExecutionContext";
 import { MessageManager } from "@/lib/runtime/MessageManager";
-import { NewAgent } from "@/lib/agent/NewAgent";
+import { BrowserAgent } from "@/lib/agent/BrowserAgent";
+import { LocalAgent } from "@/lib/agent/LocalAgent";
 import { ChatAgent } from "@/lib/agent/ChatAgent";
 import { langChainProvider } from "@/lib/llm/LangChainProvider";
 import { Logging } from "@/lib/utils/Logging";
@@ -197,10 +198,16 @@ export class Execution {
       }
 
       // Create fresh agent
+      const provideType = await langChainProvider.getCurrentProviderType() || '';
+      const smallModelsList = ['ollama', 'custom', 'openai_compatible'];
       const agent =
         this.options.mode === "chat"
           ? new ChatAgent(executionContext)
-          : new NewAgent(executionContext);
+          : getFeatureFlags().isEnabled('NEW_AGENT')
+            ? smallModelsList.includes(provideType)
+              ? new LocalAgent(executionContext)
+              : new BrowserAgent(executionContext)
+            : new BrowserAgent(executionContext);
 
       // Execute
       await agent.execute(query, metadata || this.options.metadata);
@@ -248,7 +255,7 @@ export class Execution {
             score,
             durationMs,
             {
-              agent: this.options.mode === 'chat' ? 'ChatAgent' : 'NewAgent',
+              agent: this.options.mode === 'chat' ? 'ChatAgent' : 'BrowserAgent',
               provider: provider?.name,
               model: provider?.modelId,
             },
