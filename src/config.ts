@@ -46,41 +46,31 @@ export function isMockLLMSettings(): boolean {
 
 /**
  * Evaluation configuration for development/debugging
- *
- * IMPORTANT: All evaluation/telemetry features are automatically disabled in production.
- * These flags will only work when NODE_ENV !== 'production'
- *
- * To enable telemetry in development:
+ * 
+ * To enable telemetry:
  * 1. Set ENABLE_TELEMETRY = true in your .env file
  * 2. Add your Braintrust API key to BRAINTRUST_API_KEY in your .env file
  * 3. Add your OpenAI API key to OPENAI_API_KEY_FOR_SCORING in your .env file (for LLM-as-judge scoring)
  * 4. Optionally change OPENAI_MODEL_FOR_SCORING in your .env file (defaults to gpt-4o)
  * 5. Rebuild
- *
+ * 
  * 6. To experiment, you will need BRAINTRUST_PROJECT_UUID from your Braintrust dashboard in your .env file
  * 7. Set BRAINTRUST_PROJECT_NAME in your .env file (defaults to 'browseros-agent-online')
- *
- * For the simplified evals2 system in development:
+ * 
+ * For the simplified evals2 system:
  * 1. Set ENABLE_EVALS2 = true in your .env file
  * 2. Set BRAINTRUST_API_KEY in your .env file
  * 3. Set BRAINTRUST_PROJECT_NAME in your .env file (defaults to 'browseros-agent-online')
  * 4. Rebuild
  */
+export const ENABLE_TELEMETRY = process.env.ENABLE_TELEMETRY === 'true';
+export const ENABLE_EVALS2 = process.env.ENABLE_EVALS2 === 'true';
+export const BRAINTRUST_API_KEY = process.env.BRAINTRUST_API_KEY || '';
+export const BRAINTRUST_PROJECT_UUID = process.env.BRAINTRUST_PROJECT_UUID || '';
+export const BRAINTRUST_PROJECT_NAME = process.env.BRAINTRUST_PROJECT_NAME || 'browseros-agent-online';
 
-// Check if we're in development mode
-const IS_DEVELOPMENT = process.env.NODE_ENV !== 'production';
-
-// Only enable telemetry/evals in development mode, always false in production
-export const ENABLE_TELEMETRY = IS_DEVELOPMENT && process.env.ENABLE_TELEMETRY === 'true';
-export const ENABLE_EVALS2 = IS_DEVELOPMENT && process.env.ENABLE_EVALS2 === 'true';
-
-// API keys are only exposed in development mode when telemetry/evals are enabled
-export const BRAINTRUST_API_KEY = (ENABLE_TELEMETRY || ENABLE_EVALS2) ? (process.env.BRAINTRUST_API_KEY || '') : '';
-export const BRAINTRUST_PROJECT_UUID = ENABLE_TELEMETRY ? (process.env.BRAINTRUST_PROJECT_UUID || '') : '';
-export const BRAINTRUST_PROJECT_NAME = (ENABLE_TELEMETRY || ENABLE_EVALS2) ? (process.env.BRAINTRUST_PROJECT_NAME || 'browseros-agent-online') : '';
-
-// Gemini API keys for evals2 scoring - only in development when evals2 is enabled
-export const GOOGLE_GENAI_API_KEY = ENABLE_EVALS2 ? (process.env.GOOGLE_GENAI_API_KEY || '') : '';
-export const GEMINI_API_KEY = ENABLE_EVALS2 ? (process.env.GEMINI_API_KEY || '') : '';
+// Gemini API keys for evals2 scoring
+export const GOOGLE_GENAI_API_KEY = process.env.GOOGLE_GENAI_API_KEY || '';
+export const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 export default config 
