@@ -50,6 +50,7 @@ interface TeachModeStore {
   reset: () => void
   loadRecordings: () => Promise<void>
   getWorkflow: (recordingId: string) => Promise<SemanticWorkflow | null>
+  updateWorkflow: (recordingId: string, updates: Partial<SemanticWorkflow>) => Promise<boolean>
   handleBackendEvent: (payload: TeachModeEventPayload) => void
   setVoiceStatus: (status: voiceStatus) => void
   // Port messaging setup
@@ -426,6 +427,43 @@ export const useTeachModeStore = create<TeachModeStore>((set, get) => ({
     }
   },
 
+  updateWorkflow: async (recordingId: string, updates: Partial<SemanticWorkflow>): Promise<boolean> => {
+    const { portMessaging } = get()
+    if (!portMessaging) {
+      throw new Error('Port messaging not initialized')
+    }
+
+    try {
+      const response = await portMessaging.sendMessageWithResponse<any>(
+        MessageType.TEACH_MODE_UPDATE_WORKFLOW,
+        { recordingId, updates }
+      )
+
+      if (response?.success) {
+        // Update cached workflow if it's the active one
+        const activeRecording = get().activeRecording
+        const activeWorkflow = get().activeWorkflow
+        if (activeRecording?.id === recordingId && activeWorkflow) {
+          // Merge updates with existing workflow
+          const updatedWorkflow: SemanticWorkflow = {
+            ...activeWorkflow,
+            metadata: {
+              ...activeWorkflow.metadata,
+              ...(updates.metadata || {})
+            },
+            steps: updates.steps || activeWorkflow.steps
+          }
+          set({ activeWorkflow: updatedWorkflow })
+        }
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Failed to update workflow:', error)
+      return false
+    }
+  },
+
   handleBackendEvent: (payload: TeachModeEventPayload) => {
     const state = get()
 
@@ -528,36 +566,76 @@ export const useTeachModeStore = create<TeachModeStore>((set, get) => ({
         set(state => ({
           preprocessingStatus: state.preprocessingStatus ? {
             ...state.preprocessingStatus,
-            progress: payload.data.current,
-            total: payload.data.total,
-            actionType: payload.data.actionType,  // Handle action type
-            message: payload.data.message
+            progress: payload.data.current !== undefined ? payload.data.current : state.preprocessingStatus.progress,
+            total: payload.data.total !== undefined ? payload.data.total : state.preprocessingStatus.total,
+            actionType: payload.data.actionType || state.preprocessingStatus.actionType,
+            message: payload.data.message || state.preprocessingStatus.message
           } : null
         }))
         break
 
       case 'preprocessing_completed':
+        // Get the recording ID from the event data
+        const recordingId = payload.data?.recordingId
+
+        // Clear processing state but transition to ready mode
         set({
-          mode: 'idle',
+          mode: 'ready',  // Show detail view instead of going home
           preprocessingStatus: null,
           recordingEvents: [],
           recordingStartTime: null,
           currentSessionId: null
         })
-        // Reload recordings to get the new workflow
-        get().loadRecordings()
+
+        // Load recordings and set the new recording as active
+        get().loadRecordings().then(async () => {
+          const recordings = get().recordings
+          const newRecording = recordings.find(r => r.id === recordingId)
+          if (newRecording) {
+            // Set as active recording so detail view can display it
+            set({ activeRecording: newRecording })
+            // Preload the workflow for immediate display
+            await get().getWorkflow(recordingId)
+          }
+        })
         break
 
       case 'preprocessing_failed':
-        set({
-          mode: 'idle',
-          preprocessingStatus: null,
-          recordingEvents: [],
-          recordingStartTime: null,
-          currentSessionId: null
-        })
-        // Still reload recordings (raw recording was saved)
-        get().loadRecordings()
+        // Get the recording ID from the event data if available
+        const failedRecordingId = payload.data?.recordingId
+
+        // If we have a recording ID, show it even though processing failed
+        if (failedRecordingId) {
+          set({
+            mode: 'ready',  // Show detail view even on failure
+            preprocessingStatus: null,
+            recordingEvents: [],
+            recordingStartTime: null,
+            currentSessionId: null
+          })
+
+          // Load recordings and set the failed recording as active
+          get().loadRecordings().then(async () => {
+            const recordings = get().recordings
+            const failedRecording = recordings.find(r => r.id === failedRecordingId)
+            if (failedRecording) {
+              set({ activeRecording: failedRecording })
+              // Try to get workflow (might be partial)
+              await get().getWorkflow(failedRecordingId)
+            }
+          })
+        } else {
+          // No recording ID, go back to home
+          set({
+            mode: 'idle',
+            preprocessingStatus: null,
+            recordingEvents: [],
+            recordingStartTime: null,
+            currentSessionId: null
+          })
+          // Still reload recordings (raw recording may have been saved)
+          get().loadRecordings()
+        }
         break
 
       case 'transcript_update':
