@@ -866,7 +866,7 @@ ${fullHistory}
 
       const { name: toolName, args, id: toolCallId } = toolCall;
 
-      this._emitDevModeDebug(`Calling tool ${toolName} with args`, JSON.stringify(args));
+      this._emitDebug(`Calling tool ${toolName} with args`, JSON.stringify(args));
 
       // Start glow animation for visual tools
       await this._maybeStartGlowAnimation(toolName);
@@ -882,7 +882,7 @@ ${fullHistory}
           error: errorMsg,
         });
 
-        this._emitDevModeDebug("Error", errorMsg);
+        this._emitDebug("Error", errorMsg);
       } else {
         try {
           // Execute tool (wrap for evals2 metrics if enabled)
@@ -910,7 +910,7 @@ ${fullHistory}
             "error",
           );
 
-          this._emitDevModeDebug(`Error executing ${toolName}`, errorMsg);
+          this._emitDebug(`Error executing ${toolName}`, errorMsg);
         }
       }
 
@@ -945,19 +945,30 @@ ${fullHistory}
 
 
   // Emit debug information in development mode
-  private _emitDevModeDebug(action: string, details?: string, maxLength: number = 60): void {
-    if (isDevelopmentMode()) {
-      let message = action;
-      if (details) {
-        const truncated = details.length > maxLength
-          ? details.substring(0, maxLength) + "..."
-          : details;
-        message = `${action}: ${truncated}`;
+  private _emitDebug(action: string, details?: any, maxLength: number = 200): void {
+    if (!isDevelopmentMode()) return;
+
+    let message = `[TeachAgent] ${action}`;
+    if (details !== undefined && details !== null) {
+      let detailString: string;
+      if (typeof details === 'object') {
+        detailString = JSON.stringify(details, null, 2);
+      } else {
+        detailString = String(details);
       }
-      // Use teach-mode event for dev debug
-      const debugMsgId = PubSub.generateId('teach_debug');
-      this._emitThinking(debugMsgId, `[DEV MODE] ${message}`);
+
+      if (detailString.length > maxLength) {
+        detailString = detailString.substring(0, maxLength) + '...';
+      }
+      message = `${message}: ${detailString}`;
     }
+
+    // Use teach-mode event for dev debug
+    const debugMsgId = PubSub.generateId('teach_debug');
+    this._emitThinking(debugMsgId, `[DEV MODE] ${message}`);
+
+    // Also log to console for development
+    Logging.log("TeachAgent", message, "info");
   }
 
   private _handleExecutionError(error: unknown): void {

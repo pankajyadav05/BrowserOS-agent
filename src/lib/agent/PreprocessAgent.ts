@@ -41,6 +41,7 @@ import {
   generateGoalExtractionPrompt,
   generateWorkflowNamePrompt
 } from "./PreprocessAgent.prompt";
+import { isDevelopmentMode } from "@/config";
 
 /**
  * PreprocessAgent converts TeachModeRecording into SemanticWorkflow
@@ -63,8 +64,6 @@ export class PreprocessAgent {
   async processRecording(recording: TeachModeRecording): Promise<SemanticWorkflow> {
     try {
       const validatedRecording = TeachModeRecordingSchema.parse(recording);
-      console.log("validatedRecording", validatedRecording)
-
       Logging.log("PreprocessAgent", `Processing recording with ${validatedRecording.events.length} events`, "info");
 
       // Emit preprocessing started
@@ -89,6 +88,9 @@ export class PreprocessAgent {
           transcript = await this._transcribeAudio(validatedRecording.audio);
           Logging.log("PreprocessAgent", `Transcription complete: ${transcript.length} characters`, "info");
 
+          // Emit debug info for transcript
+          this._emitDebug('Transcript extracted', transcript);
+
           // Emit progress with transcription complete
           this._emitProgress('preprocessing_progress', {
             stage: 'transcription',
@@ -108,6 +110,9 @@ export class PreprocessAgent {
 
       // Extract overall goal from narration/transcript
       this.goalExtracted = await this._extractGoalFromNarration(transcript);
+
+      // Emit debug info for goal extraction
+      this._emitDebug('Goal extracted', this.goalExtracted);
 
       // Process each event sequentially
       const steps: SemanticWorkflow['steps'] = [];
@@ -175,6 +180,9 @@ export class PreprocessAgent {
       );
       Logging.log("PreprocessAgent", `Generated workflow name: "${workflowName}"`, "info");
 
+      // Emit debug info for workflow name
+      this._emitDebug('Workflow name generated', workflowName);
+
       // Create final workflow
       const workflow: SemanticWorkflow = {
         metadata: {
@@ -191,6 +199,15 @@ export class PreprocessAgent {
       };
 
       Logging.log("PreprocessAgent", `Successfully created workflow with ${steps.length} steps`, "info");
+
+      // Emit debug info for final workflow
+      this._emitDebug('Workflow created', {
+        name: workflow.metadata.name,
+        goal: workflow.metadata.goal,
+        description: workflow.metadata.description,
+        totalSteps: workflow.steps.length,
+        stepIntents: workflow.steps.map(s => s.intent)
+      });
 
       // Emit preprocessing completed
       this._emitProgress('preprocessing_completed', {
@@ -268,12 +285,15 @@ export class PreprocessAgent {
   ): Promise<EventAnalysis> {
     try {
       // Get LLM with structured output
-      console.log("event", event)
+      this._emitDebug(`Analyzing event ${actionIndex}`, {
+        actionType: event.action.type,
+        eventId: event.id,
+        targetElement: event.target?.element?.tagName || 'none'
+      });
       const llm = await getLLM({
         temperature: 0.3,
         maxTokens: 2048
       });
-      console.log("llm", llm)
       const structuredLLM = llm.withStructuredOutput(EventAnalysisSchema);
 
       // Build multi-message context for LLM
@@ -389,6 +409,38 @@ export class PreprocessAgent {
   }
 
   /**
+   * Emit debug information in development mode
+   */
+  private _emitDebug(action: string, details?: any, maxLength: number = 200): void {
+    if (!isDevelopmentMode()) return;
+
+    let message = `[PreprocessAgent] ${action}`;
+    if (details !== undefined && details !== null) {
+      let detailString: string;
+      if (typeof details === 'object') {
+        detailString = JSON.stringify(details, null, 2);
+      } else {
+        detailString = String(details);
+      }
+
+      if (detailString.length > maxLength) {
+        detailString = detailString.substring(0, maxLength) + '...';
+      }
+      message = `${message}: ${detailString}`;
+    }
+
+    // Emit as preprocessing_progress event in dev mode
+    this._emitProgress('preprocessing_progress', {
+      stage: 'debug',
+      message,
+      timestamp: Date.now()
+    });
+
+    // Also log to console for development
+    Logging.log("PreprocessAgent", message, "info");
+  }
+
+  /**
    * Extract goal from narration transcript
    */
   private async _extractGoalFromNarration(transcript: string): Promise<GoalExtraction> {
@@ -399,12 +451,14 @@ export class PreprocessAgent {
           userGoal: "Perform the same workflow as demonstrated by the user"
         };
       }
-      console.log("transcript", transcript)
+      this._emitDebug('Extracting goal from transcript', {
+        transcriptLength: transcript.length,
+        firstWords: transcript.substring(0, 100)
+      });
       const llm = await getLLM({
         temperature: 0.2,
         maxTokens: 512
       });
-      console.log("llm", llm)
       const structuredLLM = llm.withStructuredOutput(GoalExtractionSchema);
 
       const systemPrompt = generateGoalExtractionPrompt();

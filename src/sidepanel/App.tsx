@@ -86,7 +86,6 @@ export function App() {
           }}
           showReset={messages.length > 0 || (appMode === 'teach' && teachModeState !== 'idle')}
           isProcessing={isExecuting}
-          onTeachModeClick={appMode === 'chat' ? () => useSettingsStore.getState().setAppMode('teach') : undefined}
         />
 
         {/* Main content area - changes based on mode */}
