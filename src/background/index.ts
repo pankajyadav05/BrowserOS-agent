@@ -12,6 +12,7 @@ import { ExecutionHandler } from './handlers/ExecutionHandler'
 import { ProvidersHandler } from './handlers/ProvidersHandler'
 import { MCPHandler } from './handlers/MCPHandler'
 import { PlanHandler } from './handlers/PlanHandler'
+import { TeachModeHandler } from './handlers/TeachModeHandler'
 
 /**
  * Background script for the Nxtscape extension
@@ -34,6 +35,7 @@ const executionHandler = new ExecutionHandler()
 const providersHandler = new ProvidersHandler()
 const mcpHandler = new MCPHandler()
 const planHandler = new PlanHandler()
+const teachModeHandler = new TeachModeHandler()
 
 // Simple panel state for singleton
 let isPanelOpen = false
@@ -67,6 +69,12 @@ function registerHandlers(): void {
   messageRouter.registerHandler(
     MessageType.EXTRACT_PAGE_CONTENT,
     (msg, port) => executionHandler.handleExtractPageContent(msg, port)
+  )
+
+  // Teach mode workflow execution
+  messageRouter.registerHandler(
+    MessageType.EXECUTE_TEACH_MODE_WORKFLOW,
+    (msg, port) => executionHandler.handleExecuteTeachModeWorkflow(msg, port)
   )
 
   // Provider handlers
@@ -127,7 +135,68 @@ function registerHandlers(): void {
     MessageType.REFINE_PLAN,
     (msg, port) => planHandler.handleRefinePlan(msg, port)
   )
-  
+
+  // Teach mode handlers
+  messageRouter.registerHandler(
+    MessageType.TEACH_MODE_START,
+    (msg, port) => teachModeHandler.handleTeachModeStart(msg, port)
+  )
+
+  messageRouter.registerHandler(
+    MessageType.TEACH_MODE_STOP,
+    (msg, port) => teachModeHandler.handleTeachModeStop(msg, port)
+  )
+
+  messageRouter.registerHandler(
+    MessageType.TEACH_MODE_STATUS,
+    (msg, port) => teachModeHandler.handleTeachModeStatus(msg, port)
+  )
+
+  messageRouter.registerHandler(
+    MessageType.TEACH_MODE_LIST,
+    (msg, port) => teachModeHandler.handleTeachModeList(msg, port)
+  )
+
+  messageRouter.registerHandler(
+    MessageType.TEACH_MODE_GET,
+    (msg, port) => teachModeHandler.handleTeachModeGet(msg, port)
+  )
+
+  messageRouter.registerHandler(
+    MessageType.TEACH_MODE_DELETE,
+    (msg, port) => teachModeHandler.handleTeachModeDelete(msg, port)
+  )
+
+  messageRouter.registerHandler(
+    MessageType.TEACH_MODE_CLEAR,
+    (msg, port) => teachModeHandler.handleTeachModeClear(msg, port)
+  )
+
+  messageRouter.registerHandler(
+    MessageType.TEACH_MODE_EXPORT,
+    (msg, port) => teachModeHandler.handleTeachModeExport(msg, port)
+  )
+
+  messageRouter.registerHandler(
+    MessageType.TEACH_MODE_IMPORT,
+    (msg, port) => teachModeHandler.handleTeachModeImport(msg, port)
+  )
+
+  messageRouter.registerHandler(
+    MessageType.TEACH_MODE_STATS,
+    (msg, port) => teachModeHandler.handleTeachModeStats(msg, port)
+  )
+
+  messageRouter.registerHandler(
+    MessageType.TEACH_MODE_SEARCH,
+    (msg, port) => teachModeHandler.handleTeachModeSearch(msg, port)
+  )
+
+  messageRouter.registerHandler(
+    MessageType.TEACH_MODE_GET_WORKFLOW,
+    (msg, port) => teachModeHandler.handleTeachModeGetWorkflow(msg, port)
+  )
+
   // Log handler
   messageRouter.registerHandler(
     MessageType.LOG_MESSAGE,
@@ -269,7 +338,7 @@ function initialize(): void {
   
   // Register all handlers
   registerHandlers()
-  
+
   // Set up port connection listener
   chrome.runtime.onConnect.addListener(handlePortConnection)
   
@@ -298,7 +367,7 @@ function initialize(): void {
     Logging.log('Background', `Tab ${tabId} removed`)
   })
   
-  // Handle messages from newtab
+  // Handle messages from newtab only
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'NEWTAB_EXECUTE_QUERY') {
       executionHandler.handleNewtabQuery(message, sendResponse)
