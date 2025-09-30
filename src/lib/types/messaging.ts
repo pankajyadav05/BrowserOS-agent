@@ -38,7 +38,21 @@ export enum MessageType {
   EXECUTE_IN_SIDEPANEL = 'EXECUTE_IN_SIDEPANEL',
   EXECUTION_STARTING = 'EXECUTION_STARTING',
   // Page content extraction
-  EXTRACT_PAGE_CONTENT = 'EXTRACT_PAGE_CONTENT'
+  EXTRACT_PAGE_CONTENT = 'EXTRACT_PAGE_CONTENT',
+  // Teach mode operations
+  TEACH_MODE_START = 'TEACH_MODE_START',
+  TEACH_MODE_STOP = 'TEACH_MODE_STOP',
+  TEACH_MODE_STATUS = 'TEACH_MODE_STATUS',
+  TEACH_MODE_LIST = 'TEACH_MODE_LIST',
+  TEACH_MODE_GET = 'TEACH_MODE_GET',
+  TEACH_MODE_DELETE = 'TEACH_MODE_DELETE',
+  TEACH_MODE_CLEAR = 'TEACH_MODE_CLEAR',
+  TEACH_MODE_EXPORT = 'TEACH_MODE_EXPORT',
+  TEACH_MODE_IMPORT = 'TEACH_MODE_IMPORT',
+  TEACH_MODE_STATS = 'TEACH_MODE_STATS',
+  TEACH_MODE_SEARCH = 'TEACH_MODE_SEARCH',
+  TEACH_MODE_GET_WORKFLOW = 'TEACH_MODE_GET_WORKFLOW',
+  EXECUTE_TEACH_MODE_WORKFLOW = 'EXECUTE_TEACH_MODE_WORKFLOW',
 }
 
 // Create a zod enum for MessageType
@@ -98,7 +112,7 @@ export type WorkflowStatusMessage = z.infer<typeof WorkflowStatusMessageSchema>
  */
 export const ExecutionMetadataSchema = z.object({
   source: z.enum(['newtab', 'sidepanel', 'popup']).optional(),  // Source of the query
-  executionMode: z.enum(['dynamic', 'predefined']).default('dynamic'),  // How to execute
+  executionMode: z.enum(['dynamic', 'predefined', 'teach']).default('dynamic'),  // How to execute
   predefinedPlan: z.object({  // Plan details when using predefined mode
     agentId: z.string(),
     steps: z.array(z.string()),
