@@ -738,7 +738,7 @@ Continue upon the previous steps what has been done so far and suggest next step
 `;
       const userPromptTokens = TokenCounter.countMessage(new HumanMessage(userPrompt));
       const browserStateMessage = await this._getBrowserStateMessage(
-        /* includeScreenshot */ this.executionContext.supportsVision() && this.executionContext.isLimitedContextMode(),
+        /* includeScreenshot */ this.executionContext.supportsVision() && !this.executionContext.isLimitedContextMode(),
         /* simplified */ true,
         /* screenshotSize */ "large",
         /* includeBrowserState */ true,
@@ -832,7 +832,7 @@ Continue upon the previous steps what has been done so far and suggest next step
         const additionalTokens = TokenCounter.countMessage(new HumanMessage(executionContext + '\n'+ plannerOutputForExecutor));
 
         const browserStateMessage = await this._getBrowserStateMessage(
-          /* includeScreenshot */ this.executionContext.supportsVision() && this.executionContext.isLimitedContextMode(),
+          /* includeScreenshot */ this.executionContext.supportsVision() && !this.executionContext.isLimitedContextMode(),
           /* simplified */ true,
           /* screenshotSize */ "medium",
           /* includeBrowserState */ true,
@@ -1370,7 +1370,7 @@ Continue upon your previous steps what has been done so far and suggest next ste
 `;
       const userPromptTokens = TokenCounter.countMessage(new HumanMessage(userPrompt));
       const browserStateMessage = await this._getBrowserStateMessage(
-        /* includeScreenshot */ this.executionContext.supportsVision() && this.executionContext.isLimitedContextMode(),
+        /* includeScreenshot */ this.executionContext.supportsVision() && !this.executionContext.isLimitedContextMode(),
         /* simplified */ true,
         /* screenshotSize */ "large",
         /* includeBrowserState */ true,
