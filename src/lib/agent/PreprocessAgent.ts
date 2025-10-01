@@ -58,16 +58,12 @@ export class PreprocessAgent {
   async processRecording(recording: TeachModeRecording): Promise<SemanticWorkflow> {
     try {
       const validatedRecording = TeachModeRecordingSchema.parse(recording);
-      Logging.log("PreprocessAgent", `Processing recording with ${validatedRecording.events.length} events`, "info");
-
-      // Filter out session events for processing count
-      const eventsToProcess = validatedRecording.events.filter(
-        e => e.action.type !== 'session_start' && e.action.type !== 'session_end'
-      );
+      const totalEvents = validatedRecording.events.length;
+      Logging.log("PreprocessAgent", `Processing recording with ${totalEvents} events`, "info");
 
       // Emit preprocessing started
       this._emitProgress('preprocessing_started', {
-        totalEvents: eventsToProcess.length
+        totalEvents: totalEvents
       });
 
       // Transcribe audio if present and narration not already set
@@ -78,7 +74,7 @@ export class PreprocessAgent {
         this._emitProgress('preprocessing_progress', {
           stage: 'transcription',
           current: 0,
-          total: eventsToProcess.length,
+          total: totalEvents,
           message: 'Transcribing audio narration...'
         });
 
@@ -86,22 +82,39 @@ export class PreprocessAgent {
           transcript = await this._transcribeAudio(validatedRecording.audio);
           Logging.log("PreprocessAgent", `Transcription complete: ${transcript.length} characters`, "info");
 
+          // Log metric for successful transcription
+          Logging.logMetric('teachmode.transcription.completed', {
+            transcriptLength: transcript.length,
+            success: true
+          }).catch(() => {
+            // Metric logging failed, continue
+          });
+
           // Emit debug info for transcript
           this._emitDebug('Transcript extracted', transcript);
 
           this._emitProgress('preprocessing_progress', {
             stage: 'transcription',
             current: 0,
-            total: eventsToProcess.length,
+            total: totalEvents,
             message: 'Transcription completed',
             transcript
           });
         } catch (error) {
           Logging.log("PreprocessAgent", `Transcription failed: ${error}`, "warning");
+
+          // Log metric for failed transcription
+          Logging.logMetric('teachmode.transcription.completed', {
+            transcriptLength: 0,
+            success: false
+          }).catch(() => {
+            // Metric logging failed, continue
+          });
+
           this._emitProgress('preprocessing_progress', {
             stage: 'transcription',
             current: 0,
-            total: eventsToProcess.length,
+            total: totalEvents,
             message: 'Continuing without transcription',
             error: String(error)
           });
@@ -124,22 +137,22 @@ export class PreprocessAgent {
         // }
 
         processedCount++;
-        Logging.log("PreprocessAgent", `Processing event ${processedCount}/${eventsToProcess.length}: ${event.action.type}`, "info");
+        Logging.log("PreprocessAgent", `Processing event ${processedCount}/${totalEvents}: ${event.action.type}`, "info");
 
         // Emit progress for event processing stage
         this._emitProgress('preprocessing_progress', {
           stage: 'event_processing',
           current: processedCount,
-          total: eventsToProcess.length,
+          total: totalEvents,
           actionType: event.action.type,
-          message: `Processing ${event.action.type} (${processedCount}/${eventsToProcess.length})`
+          message: `Processing ${event.action.type} (${processedCount}/${totalEvents})`
         });
 
         try {
           const step = await this._processEvent(
             event,
             processedCount,
-            eventsToProcess.length,
+            totalEvents,
             transcript,
             previousState,
             currentWorkflowSummary
@@ -190,6 +203,29 @@ export class PreprocessAgent {
         description: workflow.metadata.description,
         totalSteps: workflow.steps.length,
         stepIntents: workflow.steps.map(s => s.intent)
+      });
+
+      // Count action types from the recording
+      const actionTypeCounts: Record<string, number> = {};
+      validatedRecording.events.forEach(event => {
+        const actionType = event.action.type;
+        actionTypeCounts[actionType] = (actionTypeCounts[actionType] || 0) + 1;
+      });
+
+      // Log metric for preprocessing completion
+      Logging.logMetric('teachmode.preprocessing.completed', {
+        eventsCount: validatedRecording.events.length,
+        stepsGenerated: steps.length,
+        workflowGoal: workflow.metadata.goal,
+        hasTranscript: !!transcript,
+        transcript: transcript || undefined,
+        actionTypeCounts,
+        steps: workflow.steps.map(s => ({
+          intent: s.intent,
+          type: s.action.type
+        }))
+      }).catch(() => {
+        // Metric logging failed, continue
       });
 
       // Emit preprocessing completed

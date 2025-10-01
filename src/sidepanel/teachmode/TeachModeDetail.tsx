@@ -5,6 +5,10 @@ import { SemanticStepTimeline } from './components/SemanticStepTimeline'
 import { useTeachModeStore } from './teachmode.store'
 import { formatTime } from './teachmode.utils'
 import type { SemanticWorkflow } from '@/lib/teach-mode/types'
+import { FeedbackButtons } from '@/sidepanel/components/feedback/FeedbackButtons'
+import { FeedbackModal } from '@/sidepanel/components/feedback/FeedbackModal'
+import { feedbackService } from '@/lib/services/feedbackService'
+import type { FeedbackType, FeedbackSubmission } from '@/lib/types/feedback'
 
 export function TeachModeDetail() {
   const { activeRecording, setMode, executeRecording, getWorkflow, updateWorkflow, activeWorkflow } = useTeachModeStore()
@@ -12,6 +16,13 @@ export function TeachModeDetail() {
   const [loadingWorkflow, setLoadingWorkflow] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Feedback state
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+  const [feedbackType, setFeedbackType] = useState<FeedbackType | undefined>(undefined)
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showThankYou, setShowThankYou] = useState(false)
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -55,21 +66,101 @@ export function TeachModeDetail() {
     fetchWorkflow()
   }, [activeRecording, getWorkflow, activeWorkflow])
 
-  if (!activeRecording) {
-    return null
-  }
+  // Handle feedback submission - Move hooks before conditional returns
+  const handleFeedback = useCallback(async (type: FeedbackType) => {
+    if (!activeRecording) return
 
+    if (type === 'thumbs_up') {
+      // Submit thumbs up directly
+      setIsSubmitting(true)
+      try {
+        const feedback: FeedbackSubmission = {
+          source: 'teachmode',
+          type,
+          timestamp: new Date(),
+          data: {
+            workflowName: activeRecording.name,
+            workflowGoal: workflow?.metadata?.goal || 'No goal set',
+            stepsCount: workflow?.steps?.length || 0,
+            hasIcon: !!activeRecording.icon,
+            userQuery: 'Workflow configuration',
+            agentResponse: workflow?.metadata?.goal || 'No goal set'
+          }
+        }
+
+        await feedbackService.submitFeedback(feedback)
+        setFeedbackSubmitted(true)
+        setFeedbackType('thumbs_up')
+        setShowThankYou(true)
+        setTimeout(() => {
+          setShowThankYou(false)
+        }, 2000)
+      } catch (error) {
+        console.error('Failed to submit feedback:', error)
+      } finally {
+        setIsSubmitting(false)
+      }
+    } else {
+      // Show modal for thumbs down
+      setShowFeedbackModal(true)
+    }
+  }, [activeRecording, workflow])
+
+  // Handle modal submission
+  const handleModalSubmit = useCallback(async (textFeedback: string) => {
+    if (!activeRecording) return
+
+    setIsSubmitting(true)
+    try {
+      const feedback: FeedbackSubmission = {
+        source: 'teachmode',
+        type: 'thumbs_down',
+        user_feedback: textFeedback,
+        timestamp: new Date(),
+        data: {
+          workflowName: activeRecording.name,
+          workflowGoal: workflow?.metadata?.goal || 'No goal set',
+          stepsCount: workflow?.steps?.length || 0,
+          hasIcon: !!activeRecording.icon,
+          userQuery: 'Workflow configuration',
+          agentResponse: workflow?.metadata?.goal || 'No goal set'
+        }
+      }
+
+      await feedbackService.submitFeedback(feedback)
+      setFeedbackSubmitted(true)
+      setFeedbackType('thumbs_down')
+      setShowFeedbackModal(false)
+      setShowThankYou(true)
+      setTimeout(() => {
+        setShowThankYou(false)
+      }, 2000)
+    } catch (error) {
+      console.error('Failed to submit feedback:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [activeRecording, workflow])
+
+  // Non-hook functions - defined after all hooks
   const handleBack = () => {
     setMode('idle')
   }
 
   const handleRunNow = () => {
-    executeRecording(activeRecording.id)
+    if (activeRecording) {
+      executeRecording(activeRecording.id)
+    }
   }
 
   const handleSchedule = () => {
     // Future enhancement
     console.log('Schedule workflow')
+  }
+
+  // Conditional returns must come after all hooks
+  if (!activeRecording) {
+    return null
   }
 
   return (
@@ -161,7 +252,43 @@ export function TeachModeDetail() {
             }}
           />
         </div>
+
+        {/* Feedback section at bottom */}
+        {(!feedbackSubmitted || showThankYou) && (
+          <div className="mt-6 pt-4 border-t border-border">
+            <div className="flex items-center justify-center gap-3">
+              {!feedbackSubmitted && (
+                <>
+                  <span className="text-sm text-muted-foreground">Is this workflow configuration helpful?</span>
+                  <FeedbackButtons
+                    messageId={activeRecording.id}
+                    onFeedback={(_, type) => handleFeedback(type)}
+                    isSubmitted={feedbackSubmitted}
+                    submittedType={feedbackType}
+                    isSubmitting={isSubmitting}
+                  />
+                </>
+              )}
+
+              {feedbackSubmitted && showThankYou && (
+                <div className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-md animate-in fade-in-0 slide-in-from-bottom-1">
+                  Thanks for your feedback!
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Feedback modal */}
+      {showFeedbackModal && (
+        <FeedbackModal
+          isOpen={showFeedbackModal}
+          onClose={() => setShowFeedbackModal(false)}
+          onSubmit={handleModalSubmit}
+          isSubmitting={isSubmitting}
+        />
+      )}
     </div>
   )
 }
