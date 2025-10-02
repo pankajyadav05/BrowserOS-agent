@@ -49,11 +49,11 @@ import {
   createCelebrationTool,
   createMoondreamVisualClickTool,
   createMoondreamVisualTypeTool,
-} from "@/lib/tools/NewTools";
-import { createGroupTabsTool } from "@/lib/tools/tab/GroupTabsTool";
-import { createGetSelectedTabsTool } from "@/lib/tools/tab/GetSelectedTabsTool";
-import { createDateTool } from "@/lib/tools/utility/DateTool";
-import { createMCPTool } from "@/lib/tools/mcp/MCPTool";
+  createGroupTabsTool,
+  createGetSelectedTabsTool,
+  createDateTool,
+  createMCPTool,
+} from "@/lib/tools";
 import { GlowAnimationService } from '@/lib/services/GlowAnimationService';
 // Evals2: lightweight tool wrapper + flag
 import { wrapToolForMetrics } from '@/evals2/EvalToolWrapper';

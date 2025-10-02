@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { Logging } from '@/lib/utils/Logging'
-import { createPlannerTool } from '@/lib/tools/planning/PlannerTool'
+import { createPlannerTool } from '@/lib/tools'
 import { ExecutionContext } from '@/lib/runtime/ExecutionContext'
 import BrowserContext from '@/lib/browser/BrowserContext'
 import { MessageManager } from '@/lib/runtime/MessageManager'

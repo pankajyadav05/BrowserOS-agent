@@ -56,12 +56,12 @@ import {
   createMoondreamVisualTypeTool,
   createGrepElementsTool,
   createCelebrationTool,
-} from "@/lib/tools/NewTools";
-import { createGroupTabsTool } from "@/lib/tools/tab/GroupTabsTool";
-import { createBrowserOSInfoTool } from '@/lib/tools/utility/BrowserOSInfoTool';
-import { createGetSelectedTabsTool } from "@/lib/tools/tab/GetSelectedTabsTool";
-import { createDateTool } from "@/lib/tools/utility/DateTool";
-import { createMCPTool } from "@/lib/tools/mcp/MCPTool";
+  createGroupTabsTool,
+  createBrowserOSInfoTool,
+  createGetSelectedTabsTool,
+  createDateTool,
+  createMCPTool,
+} from "@/lib/tools";
 import { GlowAnimationService } from '@/lib/services/GlowAnimationService';
 import { TokenCounter } from "../utils/TokenCounter";
 import { wrapToolForMetrics } from '@/evals2/EvalToolWrapper';
