@@ -728,7 +728,7 @@ export class BrowserAgent {
       const elapsed = Date.now() - metrics.startTime;
 
       // Get accumulated execution history from all iterations
-      var fullHistory = this._buildPlannerExecutionHistory();
+      let fullHistory = this._buildPlannerExecutionHistory();
 
       // Get numbeer of tokens in full history
       // System prompt for planner
@@ -1355,7 +1355,7 @@ ${fullHistory}
       const elapsed = Date.now() - metrics.startTime;
 
       // Get accumulated execution history from all iterations
-      var fullHistory = this._buildPlannerExecutionHistory();
+      let fullHistory = this._buildPlannerExecutionHistory();
 
       const systemPrompt = generatePredefinedPlannerPrompt(this.toolDescriptions || "");
       const systemPromptTokens = TokenCounter.countMessage(new SystemMessage(systemPrompt));

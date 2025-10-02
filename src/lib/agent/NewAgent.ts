@@ -388,7 +388,7 @@ export class NewAgent {
     this.executionContext.setCurrentTask(task);
 
     // Convert predefined steps to TODO markdown
-    let todoMarkdown = plan.steps.map((step: string) => `- [ ] ${step}`).join('\n');
+    const todoMarkdown = plan.steps.map((step: string) => `- [ ] ${step}`).join('\n');
     this.executionContext.setTodoList(todoMarkdown);
 
     // executor system prompt
