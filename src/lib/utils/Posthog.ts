@@ -22,16 +22,14 @@ export function initializeMetrics(): void {
   posthog.init(posthogApiKey, {
     api_host: 'https://us.i.posthog.com',
     person_profiles: 'identified_only',
-
     disable_external_dependency_loading: true,
     persistence: 'localStorage',
-
     disable_session_recording: false,
     capture_pageview: true,
     autocapture: true,
-
-
-    // Track extension context
+    session_recording: {
+      maskAllInputs: false
+    },
     loaded: (posthog) => {
       console.log('[Metrics] Initialized for UI context')
       posthog.register({
