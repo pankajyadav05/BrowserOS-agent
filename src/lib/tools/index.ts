@@ -1,5 +1,5 @@
 // Tool interfaces and types
-export * from './tool.interface'
+export * from './ToolInterface'
 
 // Tool Manager
 export * from './ToolManager'
