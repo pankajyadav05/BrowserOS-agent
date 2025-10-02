@@ -27,7 +27,8 @@ const DEFAULT_ANTHROPIC_MODEL = 'claude-4-sonnet'
 const DEFAULT_OLLAMA_MODEL = "qwen3:4b"
 const DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 const DEFAULT_BROWSEROS_PROXY_URL = "https://llm.browseros.com/default/"
-const DEFAULT_BROWSEROS_MODEL = "openai"
+const DEFAULT_BROWSEROS_MODEL_FAMILY_URL = "https://llm.browseros.com/api/model_family"
+const DEFAULT_BROWSEROS_MODEL = "openai"  // Fallback model family
 const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
 
 
@@ -353,7 +354,7 @@ export class LangChainProvider {
     }
 
     try {
-      const response = await fetch('https://llm.browseros.com/api/model_family')
+      const response = await fetch(DEFAULT_BROWSEROS_MODEL_FAMILY_URL)
       if (response.ok) {
         const data = await response.json()
         const family = data.model_family || DEFAULT_BROWSEROS_MODEL
@@ -394,7 +395,7 @@ export class LangChainProvider {
         anthropicApiUrl: DEFAULT_BROWSEROS_PROXY_URL
       })
     } else {
-      // Default to OpenAI for 'openai' family or any other
+      // Default to OpenAI for 'openai' family
       model = new ChatOpenAI({
         modelName: modelFamily,
         temperature,
