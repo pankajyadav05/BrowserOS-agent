@@ -8,7 +8,7 @@ const TabFocusInputSchema = z.object({
 });
 type TabFocusInput = z.infer<typeof TabFocusInputSchema>;
 
-export function createTabFocusTool(
+export function TabFocusTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({

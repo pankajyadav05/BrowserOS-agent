@@ -12,7 +12,7 @@ const GrepElementsInputSchema = z.object({
 });
 type GrepElementsInput = z.infer<typeof GrepElementsInputSchema>;
 
-export function createGrepElementsTool(context: ExecutionContext): DynamicStructuredTool {
+export function GrepElementsTool(context: ExecutionContext): DynamicStructuredTool {
   return new DynamicStructuredTool({
     name: "grep_elements",
     description: `Search page elements using regex patterns. Browser state format: [nodeId] <C/T> <tag> "text" attributes

@@ -5,7 +5,7 @@ import { PubSubChannel } from "@/lib/pubsub/PubSubChannel";
 import { Logging } from "@/lib/utils/Logging";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 
-export function createExtractTool(
+export function ExtractTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({

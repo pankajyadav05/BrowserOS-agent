@@ -1,32 +1,26 @@
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 import { ExecutionContext } from "@/lib/runtime/ExecutionContext";
-import { PubSubChannel } from "@/lib/pubsub/PubSubChannel";
 
-const ClearInputSchema = z.object({
+const ClickInputSchema = z.object({
   nodeId: z
     .number()
     .int()
     .positive()
     .describe("The nodeId number from [brackets] in element list"),
 });
-type ClearInput = z.infer<typeof ClearInputSchema>;
+type ClickInput = z.infer<typeof ClickInputSchema>;
 
-export function createClearTool(
+export function ClickTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({
-    name: "clear",
-    description: "Clear text from an input element",
-    schema: ClearInputSchema,
-    func: async (args: ClearInput) => {
+    name: "click",
+    description: "Click an element by its nodeId (number in brackets)",
+    schema: ClickInputSchema,
+    func: async (args: ClickInput) => {
       try {
         context.incrementMetric("toolCalls");
-
-        // Emit thinking message
-        context.getPubSub().publishMessage(
-          PubSubChannel.createMessage("Clearing text...", "thinking")
-        );
 
         // Get current page from browserContext
         const page = await context.browserContext.getCurrentPage();
@@ -42,18 +36,18 @@ export function createClearTool(
           });
         }
 
-        await page.clearElement(args.nodeId);
+        await page.clickElement(args.nodeId);
         await page.waitForStability();
 
         return JSON.stringify({
           ok: true,
-          output: `Successfully cleared element ${args.nodeId} ${scrollMessage}`,
+          output: `Successfully clicked element ${args.nodeId} ${scrollMessage}`,
         });
       } catch (error) {
         context.incrementMetric("errors");
         return JSON.stringify({
           ok: false,
-          error: `Failed to clear : ${error instanceof Error ? error.message : String(error)}`,
+          error: `Failed to click : ${error instanceof Error ? error.message : String(error)}`,
         });
       }
     },

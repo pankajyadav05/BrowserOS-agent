@@ -3,15 +3,16 @@ import { z } from "zod";
 import { ExecutionContext } from "@/lib/runtime/ExecutionContext";
 import { PubSubChannel } from "@/lib/pubsub/PubSubChannel";
 
-const MoondreamVisualTypeInputSchema = z.object({
+const MoondreamVisualClickInputSchema = z.object({
   instruction: z
     .string()
     .describe(
-      "Describe the input field to type in (e.g., 'search box', 'email field', 'password input')",
+      "Describe what to click on (e.g., 'button', 'blue submit button', 'search icon')",
     ),
-  text: z.string().describe("Text to type into the identified field"),
 });
-type MoondreamVisualTypeInput = z.infer<typeof MoondreamVisualTypeInputSchema>;
+type MoondreamVisualClickInput = z.infer<
+  typeof MoondreamVisualClickInputSchema
+>;
 
 interface MoondreamPointResponse {
   request_id?: string;
@@ -24,21 +25,21 @@ interface MoondreamPointResponse {
   };
 }
 
-export function createMoondreamVisualTypeTool(
+export function MoondreamVisualClickTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({
-    name: "visual_type",
+    name: "visual_click",
     description:
-      "Type text into any input field by describing what it looks like. Pass a clear description like 'search box', 'email field', 'username input', 'comment textarea', etc.",
-    schema: MoondreamVisualTypeInputSchema,
-    func: async (args: MoondreamVisualTypeInput) => {
+      "Click on any element by describing what it looks like. Pass a clear description like 'blue submit button', 'search icon', 'first checkbox', 'close button in modal', etc.",
+    schema: MoondreamVisualClickInputSchema,
+    func: async (args: MoondreamVisualClickInput) => {
       try {
         context.incrementMetric("toolCalls");
 
         // Emit thinking message
         context.getPubSub().publishMessage(
-          PubSubChannel.createMessage(`⌨️ Typing "${args.text}"...`, "thinking")
+          PubSubChannel.createMessage("🎯 Clicking...", "thinking")
         );
 
         // Get API key from environment
@@ -58,7 +59,7 @@ export function createMoondreamVisualTypeTool(
           ({ width: window.innerWidth, height: window.innerHeight })
         `);
 
-        // Take screenshot with exact viewport dimensions
+        // Take screenshot with exact viewport dimensions for accurate coordinate mapping
         const screenshot = await page.takeScreenshotWithDimensions(
           viewport.width,
           viewport.height,
@@ -67,11 +68,11 @@ export function createMoondreamVisualTypeTool(
         if (!screenshot) {
           return JSON.stringify({
             ok: false,
-            error: "Failed to capture screenshot for Moondream visual type",
+            error: "Failed to capture screenshot for Moondream visual click",
           });
         }
 
-        // Call Moondream API to find the input field
+        // Call Moondream API
         const response = await fetch("https://api.moondream.ai/v1/point", {
           method: "POST",
           headers: {
@@ -111,14 +112,14 @@ export function createMoondreamVisualTypeTool(
         const x = Math.round(point.x * viewport.width);
         const y = Math.round(point.y * viewport.height);
 
-        // Use the typeAtCoordinates method
-        await page.typeAtCoordinates(x, y, args.text);
+        // Use the clickAtCoordinates method
+        await page.clickAtCoordinates(x, y);
 
         return JSON.stringify({
           ok: true,
           output: {
             coordinates: { x, y },
-            description: `Typed "${args.text}" into "${args.instruction}" at (${x}, ${y})`,
+            description: `Clicked "${args.instruction}" at (${x}, ${y})`,
             pointsFound: data.points.length,
           },
         });
@@ -126,7 +127,7 @@ export function createMoondreamVisualTypeTool(
         context.incrementMetric("errors");
         return JSON.stringify({
           ok: false,
-          error: `Moondream type failed: ${error instanceof Error ? error.message : String(error)}`,
+          error: `Moondream click failed: ${error instanceof Error ? error.message : String(error)}`,
         });
       }
     },

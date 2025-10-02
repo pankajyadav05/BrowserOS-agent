@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { GetSelectedTabsTool, createGetSelectedTabsTool } from './GetSelectedTabsTool'
+import { GetSelectedTabsToolImpl, GetSelectedTabsTool } from './GetSelectedTabsTool'
 import { ExecutionContext } from '@/lib/runtime/ExecutionContext'
 import { MessageManager } from '@/lib/runtime/MessageManager'
 import { BrowserContext } from '@/lib/browser/BrowserContext'
@@ -24,7 +24,7 @@ describe('GetSelectedTabsTool-unit-test', () => {
       eventProcessor
     })
     
-    const tool = new GetSelectedTabsTool(executionContext)
+    const tool = new GetSelectedTabsToolImpl(executionContext)
     
     // Verify the tool is created properly
     expect(tool).toBeDefined()
@@ -32,7 +32,7 @@ describe('GetSelectedTabsTool-unit-test', () => {
     expect(typeof tool.execute).toBe('function')
     
     // Also test the factory function
-    const langchainTool = createGetSelectedTabsTool(executionContext)
+    const langchainTool = GetSelectedTabsTool(executionContext)
     expect(langchainTool).toBeDefined()
     expect(langchainTool.name).toBe('get_selected_tabs')
     expect(langchainTool.description).toContain('Get information about currently selected tabs')
@@ -58,7 +58,7 @@ describe('GetSelectedTabsTool-unit-test', () => {
     // Mock getPages to throw error
     vi.spyOn(browserContext, 'getPages').mockRejectedValue(new Error('Browser connection lost'))
     
-    const tool = new GetSelectedTabsTool(executionContext)
+    const tool = new GetSelectedTabsToolImpl(executionContext)
     const result = await tool.execute({})
     
     // Verify error is handled
@@ -105,7 +105,7 @@ describe('GetSelectedTabsTool-unit-test', () => {
     
     const getPagesSpy = vi.spyOn(browserContext, 'getPages')
     
-    const tool = new GetSelectedTabsTool(executionContext)
+    const tool = new GetSelectedTabsToolImpl(executionContext)
     
     // Test 1: With selected tabs
     vi.spyOn(executionContext, 'getSelectedTabIds').mockReturnValue([1, 2])

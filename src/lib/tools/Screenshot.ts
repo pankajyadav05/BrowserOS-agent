@@ -11,7 +11,7 @@ const ScreenshotToolInputSchema = z.object({
 
 type ScreenshotToolInput = z.infer<typeof ScreenshotToolInputSchema>;
 
-export function createScreenshotTool(executionContext: ExecutionContext): DynamicStructuredTool {
+export function ScreenshotTool(executionContext: ExecutionContext): DynamicStructuredTool {
   return new DynamicStructuredTool({
     name: 'screenshot_tool',
     description: `Capture a screenshot of the current page. Use liberally - screenshots are fast and free!

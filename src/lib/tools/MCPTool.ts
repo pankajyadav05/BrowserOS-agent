@@ -20,7 +20,7 @@ export type MCPToolInput = z.infer<typeof MCPToolInputSchema>
  * MCPTool - Interacts with installed MCP servers at runtime
  * Following the FindElementTool pattern
  */
-export class MCPTool {
+export class MCPToolImpl {
   private manager: KlavisAPIManager
   private instancesCache: Map<string, { id: string; name: string }> = new Map()
 
@@ -230,8 +230,8 @@ export class MCPTool {
 /**
  * Factory function to create MCPTool for LangChain integration
  */
-export function createMCPTool(executionContext: ExecutionContext): DynamicStructuredTool {
-  const mcpTool = new MCPTool(executionContext)
+export function MCPTool(executionContext: ExecutionContext): DynamicStructuredTool {
+  const tool = new MCPToolImpl(executionContext)
 
   return new DynamicStructuredTool({
     name: "mcp_tool",
@@ -243,7 +243,7 @@ export function createMCPTool(executionContext: ExecutionContext): DynamicStruct
 
     schema: MCPToolInputSchema,
     func: async (args): Promise<string> => {
-      const result = await mcpTool.execute(args)
+      const result = await tool.execute(args)
       return JSON.stringify(result)
     }
   })

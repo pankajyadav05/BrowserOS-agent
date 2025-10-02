@@ -24,7 +24,7 @@ const ScrollInputSchema = z.object({
 });
 type ScrollInput = z.infer<typeof ScrollInputSchema>;
 
-export function createScrollTool(
+export function ScrollTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({

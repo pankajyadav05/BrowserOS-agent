@@ -12,7 +12,7 @@ const TabOpenInputSchema = z.object({
 });
 type TabOpenInput = z.infer<typeof TabOpenInputSchema>;
 
-export function createTabOpenTool(
+export function TabOpenTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({

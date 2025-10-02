@@ -17,7 +17,7 @@ export const GroupTabsInputSchema = z.object({
 
 export type GroupTabsInput = z.infer<typeof GroupTabsInputSchema>
 
-export class GroupTabsTool {
+export class GroupTabsToolImpl {
   constructor(private executionContext: ExecutionContext) {}
 
   async execute(input: GroupTabsInput): Promise<ToolOutput> {
@@ -65,15 +65,15 @@ export class GroupTabsTool {
 }
 
 // LangChain wrapper factory function
-export function createGroupTabsTool(executionContext: ExecutionContext): DynamicStructuredTool {
-  const groupTabsTool = new GroupTabsTool(executionContext)
+export function GroupTabsTool(executionContext: ExecutionContext): DynamicStructuredTool {
+  const tool = new GroupTabsToolImpl(executionContext)
   
   return new DynamicStructuredTool({
     name: "group_tabs_tool",
     description: "Group browser tabs together. Pass tabIds array and optionally groupName and color (grey, blue, red, yellow, green, pink, purple, cyan, orange).",
     schema: GroupTabsInputSchema,
     func: async (args): Promise<string> => {
-      const result = await groupTabsTool.execute(args)
+      const result = await tool.execute(args)
       return JSON.stringify(result)
     }
   })

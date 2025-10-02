@@ -11,7 +11,7 @@ const DoneInputSchema = z.object({
 });
 type DoneInput = z.infer<typeof DoneInputSchema>;
 
-export function createDoneTool(
+export function DoneTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({

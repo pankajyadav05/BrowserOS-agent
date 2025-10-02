@@ -10,7 +10,7 @@ const TypeAtCoordinatesInputSchema = z.object({
 });
 type TypeAtCoordinatesInput = z.infer<typeof TypeAtCoordinatesInputSchema>;
 
-export function createTypeAtCoordinatesTool(
+export function TypeAtCoordinatesTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({

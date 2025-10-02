@@ -13,7 +13,7 @@ const WaitInputSchema = z.object({
 });
 type WaitInput = z.infer<typeof WaitInputSchema>;
 
-export function createWaitTool(
+export function WaitTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({

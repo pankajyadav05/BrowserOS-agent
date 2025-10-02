@@ -8,7 +8,7 @@ const HumanInputSchema = z.object({
 });
 type HumanInput = z.infer<typeof HumanInputSchema>;
 
-export function createHumanInputTool(
+export function HumanInputTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({

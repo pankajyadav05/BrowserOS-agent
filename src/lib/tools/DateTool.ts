@@ -42,7 +42,7 @@ export type DateToolInput = z.infer<typeof DateToolInputSchema>
  * DateTool - Provides formatted dates and date ranges for browser automation
  * Following the FindElementTool pattern
  */
-export class DateTool {
+export class DateToolImpl {
   private executionContext: ExecutionContext
 
   constructor(executionContext: ExecutionContext) {
@@ -172,8 +172,8 @@ export class DateTool {
  * Factory function to create DateTool for LangChain integration
  * Following the FindElementTool pattern
  */
-export function createDateTool(executionContext: ExecutionContext): DynamicStructuredTool {
-  const dateTool = new DateTool(executionContext)
+export function DateTool(executionContext: ExecutionContext): DynamicStructuredTool {
+  const tool = new DateToolImpl(executionContext)
 
   return new DynamicStructuredTool({
     name: "date_tool",
@@ -182,11 +182,11 @@ export function createDateTool(executionContext: ExecutionContext): DynamicStruc
     Formats: iso (ISO-8601 with time), date (YYYY-MM-DD), us (MM/DD/YYYY), eu (DD/MM/YYYY), unix (milliseconds).
     For custom ranges, dayStart is days back for start date, dayEnd is days back for end date.
     Example: dayStart=7, dayEnd=0 gives last 7 days from a week ago to today.`,
-    
+
     schema: DateToolInputSchema,
-    
+
     func: async (args): Promise<string> => {
-      const result = await dateTool.execute(args)
+      const result = await tool.execute(args)
       return JSON.stringify(result)
     }
   })

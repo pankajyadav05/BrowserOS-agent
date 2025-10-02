@@ -6,7 +6,7 @@ import { PubSubChannel } from "@/lib/pubsub/PubSubChannel";
 const TabsInputSchema = z.object({});
 type TabsInput = z.infer<typeof TabsInputSchema>;
 
-export function createTabsTool(
+export function TabsTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({

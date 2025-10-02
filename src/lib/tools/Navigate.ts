@@ -3,57 +3,45 @@ import { z } from "zod";
 import { ExecutionContext } from "@/lib/runtime/ExecutionContext";
 import { PubSubChannel } from "@/lib/pubsub/PubSubChannel";
 
-const KeyInputSchema = z.object({
-  key: z
-    .enum([
-      "Enter",
-      "Tab",
-      "Escape",
-      "Backspace",
-      "Delete",
-      "ArrowUp",
-      "ArrowDown",
-      "ArrowLeft",
-      "ArrowRight",
-      "Home",
-      "End",
-      "PageUp",
-      "PageDown",
-    ])
-    .describe("Keyboard key to press"),
+const NavigateInputSchema = z.object({
+  url: z
+    .string()
+    .url()
+    .describe("Full URL to navigate to (must include https://)"),
 });
-type KeyInput = z.infer<typeof KeyInputSchema>;
+type NavigateInput = z.infer<typeof NavigateInputSchema>;
 
-export function createKeyTool(
+export function NavigateTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({
-    name: "key",
-    description: "Send a keyboard key press",
-    schema: KeyInputSchema,
-    func: async (args: KeyInput) => {
+    name: "navigate",
+    description: "Navigate to a URL",
+    schema: NavigateInputSchema,
+    func: async (args: NavigateInput) => {
       try {
         context.incrementMetric("toolCalls");
 
         // Emit thinking message
         context.getPubSub().publishMessage(
-          PubSubChannel.createMessage("Pressing key...", "thinking")
+          PubSubChannel.createMessage("Navigating...", "thinking")
         );
 
         // Get current page from browserContext
         const page = await context.browserContext.getCurrentPage();
 
-        await page.sendKeys(args.key);
+        await page.navigateTo(args.url);
+        await page.waitForStability();
 
         return JSON.stringify({
           ok: true,
-          output: `Pressed ${args.key} key`,
+          output: `Successfully navigated to ${args.url}`,
         });
       } catch (error) {
         context.incrementMetric("errors");
         return JSON.stringify({
           ok: false,
-          error: `Key press failed: ${error instanceof Error ? error.message : String(error)}`,
+          error: `Navigation failed: ${error instanceof Error ? error.message : String(error)}`,
         });
       }
     },

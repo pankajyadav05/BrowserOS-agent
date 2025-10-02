@@ -8,7 +8,7 @@ const TabCloseInputSchema = z.object({
 });
 type TabCloseInput = z.infer<typeof TabCloseInputSchema>;
 
-export function createTabCloseTool(
+export function TabCloseTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({

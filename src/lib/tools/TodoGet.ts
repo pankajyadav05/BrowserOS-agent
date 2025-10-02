@@ -5,7 +5,7 @@ import { ExecutionContext } from "@/lib/runtime/ExecutionContext";
 const TodoGetInputSchema = z.object({});
 type TodoGetInput = z.infer<typeof TodoGetInputSchema>;
 
-export function createTodoGetTool(
+export function TodoGetTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({

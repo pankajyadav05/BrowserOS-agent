@@ -3,30 +3,29 @@ import { z } from "zod";
 import { ExecutionContext } from "@/lib/runtime/ExecutionContext";
 import { PubSubChannel } from "@/lib/pubsub/PubSubChannel";
 
-const TypeInputSchema = z.object({
+const ClearInputSchema = z.object({
   nodeId: z
     .number()
     .int()
     .positive()
     .describe("The nodeId number from [brackets] in element list"),
-  text: z.string().describe("Text to type into the element"),
 });
-type TypeInput = z.infer<typeof TypeInputSchema>;
+type ClearInput = z.infer<typeof ClearInputSchema>;
 
-export function createTypeTool(
+export function ClearTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({
-    name: "type",
-    description: "Type text into an input element",
-    schema: TypeInputSchema,
-    func: async (args: TypeInput) => {
+    name: "clear",
+    description: "Clear text from an input element",
+    schema: ClearInputSchema,
+    func: async (args: ClearInput) => {
       try {
         context.incrementMetric("toolCalls");
 
         // Emit thinking message
         context.getPubSub().publishMessage(
-          PubSubChannel.createMessage(`Typing "${args.text}"...`, "thinking")
+          PubSubChannel.createMessage("Clearing text...", "thinking")
         );
 
         // Get current page from browserContext
@@ -43,18 +42,18 @@ export function createTypeTool(
           });
         }
 
-        await page.inputText(args.nodeId, args.text);
+        await page.clearElement(args.nodeId);
         await page.waitForStability();
 
         return JSON.stringify({
           ok: true,
-          output: `Successfully typed "${args.text}" into element ${args.nodeId} ${scrollMessage}`,
+          output: `Successfully cleared element ${args.nodeId} ${scrollMessage}`,
         });
       } catch (error) {
         context.incrementMetric("errors");
         return JSON.stringify({
           ok: false,
-          error: `Failed to type into : ${error instanceof Error ? error.message : String(error)}`,
+          error: `Failed to clear : ${error instanceof Error ? error.message : String(error)}`,
         });
       }
     },

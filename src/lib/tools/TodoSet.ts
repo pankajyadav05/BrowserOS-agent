@@ -9,7 +9,7 @@ const TodoSetInputSchema = z.object({
 });
 type TodoSetInput = z.infer<typeof TodoSetInputSchema>;
 
-export function createTodoSetTool(
+export function TodoSetTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({

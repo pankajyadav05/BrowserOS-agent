@@ -32,7 +32,7 @@ const PlanSchema = z.object({
 type PlannerInput = z.infer<typeof PlannerInputSchema>;
 
 // Factory function to create PlannerTool
-export function createPlannerTool(executionContext: ExecutionContext): DynamicStructuredTool {
+export function PlannerTool(executionContext: ExecutionContext): DynamicStructuredTool {
   return new DynamicStructuredTool({
     name: 'planner_tool',
     description: `Generate up to ${PLANNING_CONFIG.STEPS_PER_PLAN} steps for the task`,

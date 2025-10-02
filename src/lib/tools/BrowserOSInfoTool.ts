@@ -27,7 +27,7 @@ export type BrowserOSInfoToolInput = z.infer<typeof BrowserOSInfoToolInputSchema
  * BrowserOSInfoTool - Provides comprehensive information about BrowserOS features and usage
  * Contains various README-style documentation for different aspects of BrowserOS
  */
-export class BrowserOSInfoTool {
+export class BrowserOSInfoToolImpl {
   private executionContext: ExecutionContext
 
   constructor(executionContext: ExecutionContext) {
@@ -407,8 +407,8 @@ pause and wait for me to complete it manually
 /**
  * Factory function to create BrowserOSInfoTool for LangChain integration
  */
-export function createBrowserOSInfoTool(executionContext: ExecutionContext): DynamicStructuredTool {
-  const browserOSInfoTool = new BrowserOSInfoTool(executionContext)
+export function BrowserOSInfoTool(executionContext: ExecutionContext): DynamicStructuredTool {
+  const tool = new BrowserOSInfoToolImpl(executionContext)
 
   return new DynamicStructuredTool({
     name: "browseros_info_tool",
@@ -429,7 +429,7 @@ export function createBrowserOSInfoTool(executionContext: ExecutionContext): Dyn
     schema: BrowserOSInfoToolInputSchema,
 
     func: async (args): Promise<string> => {
-      const result = await browserOSInfoTool.execute(args)
+      const result = await tool.execute(args)
       return JSON.stringify(result)
     }
   })

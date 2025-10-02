@@ -9,7 +9,7 @@ const ClickAtCoordinatesInputSchema = z.object({
 });
 type ClickAtCoordinatesInput = z.infer<typeof ClickAtCoordinatesInputSchema>;
 
-export function createClickAtCoordinatesTool(
+export function ClickAtCoordinatesTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({
