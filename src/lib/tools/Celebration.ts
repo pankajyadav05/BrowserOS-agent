@@ -4,7 +4,7 @@ import { ExecutionContext } from "@/lib/runtime/ExecutionContext";
 import { PubSubChannel } from "@/lib/pubsub/PubSubChannel";
 import { CONFETTI_SCRIPT } from "@/lib/utils/confetti";
 
-export function CelebrationTool(
+export function celebrationTool(
   context: ExecutionContext,
 ): DynamicStructuredTool {
   return new DynamicStructuredTool({
