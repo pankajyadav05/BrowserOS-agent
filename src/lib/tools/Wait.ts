@@ -8,8 +8,8 @@ const WaitInputSchema = z.object({
     .number()
     .positive()
     .optional()
-    .default(1)
-    .describe("Additional seconds to wait (default: 1)"),
+    .default(2)
+    .describe("Additional seconds to wait (default: 2)"),
 });
 type WaitInput = z.infer<typeof WaitInputSchema>;
 

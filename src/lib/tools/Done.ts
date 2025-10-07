@@ -25,6 +25,7 @@ export function DoneTool(
         ok: true,
         output: {
           success: args.success,
+          message: args.message
         },
       });
     },

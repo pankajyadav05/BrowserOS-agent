@@ -54,7 +54,7 @@ export function TypeTool(
         context.incrementMetric("errors");
         return JSON.stringify({
           ok: false,
-          error: `Failed to type into : ${error instanceof Error ? error.message : String(error)}`,
+          error: `Failed to type into element ${args.nodeId}: ${error instanceof Error ? error.message : String(error)}`,
         });
       }
     },

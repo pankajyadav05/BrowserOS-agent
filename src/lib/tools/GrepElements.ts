@@ -5,8 +5,6 @@ import { PubSubChannel } from "@/lib/pubsub/PubSubChannel";
 
 const GrepElementsInputSchema = z.object({
   pattern: z.string().describe("Regex pattern to search for (e.g., 'button.*login', 'input.*(email|user)')"),
-  start: z.number().int().nonnegative().optional().default(0)
-    .describe("Starting index for pagination (default: 0)"),
   limit: z.number().int().positive().optional().default(15)
     .describe("Maximum number of results to return (default: 15)"),
 });
@@ -66,7 +64,7 @@ Returns max 15 matches, shows total count if more exist.`,
 
         // Limit to 15 matches
         const totalMatches = matchingLines.length;
-        const limitedMatches = matchingLines.slice(0, 15);
+        const limitedMatches = matchingLines.slice(0, args.limit);
 
         if (limitedMatches.length === 0) {
           return JSON.stringify({
