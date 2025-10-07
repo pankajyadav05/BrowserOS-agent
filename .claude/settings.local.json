@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(npx cross-env:*)",
+      "Bash(npm install)",
+      "Bash(dir /s /b srcsidepanelcomponentsfeedback)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:dev:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

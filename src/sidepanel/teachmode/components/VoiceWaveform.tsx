@@ -58,11 +58,11 @@ export function VoiceWaveform({ audioLevel, isActive, isMuted = false, className
       const y = centerY - barHeight / 2
 
       // Color based on level (more intense = lighter color)
-      // Gray when muted, orange when active
+      // Gray when muted, brand color when active
       const opacity = 0.3 + (normalized * 0.7)
       ctx.fillStyle = isMuted
         ? `rgba(156, 163, 175, ${opacity})`  // Gray when muted
-        : `rgba(251, 101, 31, ${opacity})`  // Brand orange (hsl(19 96% 55%))
+        : `hsla(217, 37%, 11%, ${opacity})`  // Brand color (#121a27)
 
       // Draw rounded rectangle
       const radius = barWidth / 4

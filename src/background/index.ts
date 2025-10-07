@@ -336,6 +336,73 @@ async function toggleSidePanel(tabId: number): Promise<void> {
 }
 
 /**
+ * Handle EXECUTE_QUERY messages from runtime (e.g., from newtab)
+ */
+async function handleRuntimeExecuteQuery(
+  message: any,
+  sender: chrome.runtime.MessageSender,
+  sendResponse: (response: any) => void
+): Promise<void> {
+  try {
+    const { query, chatMode, metadata } = message.payload || message
+
+    Logging.log('Background',
+      `Received EXECUTE_QUERY from ${metadata?.source || 'runtime'}: "${query}"`)
+
+    // Open sidepanel to show execution progress
+    try {
+      if (sender.tab?.id) {
+        await chrome.sidePanel.open({ tabId: sender.tab.id })
+      } else {
+        await chrome.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT })
+      }
+
+      // Wait a bit for sidepanel to connect
+      await new Promise(resolve => setTimeout(resolve, 500))
+    } catch (error) {
+      Logging.log('Background', `Failed to open sidepanel: ${error}`, 'warning')
+    }
+
+    // Execute the query through the execution handler
+    // Create a mock port message for compatibility with existing handlers
+    const mockPortMessage = {
+      type: MessageType.EXECUTE_QUERY,
+      payload: {
+        query,
+        chatMode: chatMode || false,
+        metadata: {
+          source: metadata?.source || 'runtime',
+          executionMode: 'dynamic'
+        }
+      }
+    }
+
+    // Create a mock port for the response
+    const mockPort = {
+      name: 'runtime',
+      postMessage: (response: any) => {
+        sendResponse(response)
+      }
+    } as chrome.runtime.Port
+
+    // Execute the query
+    await executionHandler.handleExecuteQuery(mockPortMessage, mockPort)
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    Logging.log('Background', `Error handling runtime EXECUTE_QUERY: ${errorMessage}`, 'error')
+
+    sendResponse({
+      type: MessageType.WORKFLOW_STATUS,
+      payload: {
+        status: 'error',
+        error: errorMessage
+      }
+    })
+  }
+}
+
+/**
  * Initialize the extension
  */
 function initialize(): void {
@@ -373,10 +440,17 @@ function initialize(): void {
     Logging.log('Background', `Tab ${tabId} removed`)
   })
   
-  // Handle messages from newtab only
+  // Handle runtime messages (non-port messages)
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    // Handle legacy NEWTAB_EXECUTE_QUERY for backward compatibility
     if (message.type === 'NEWTAB_EXECUTE_QUERY') {
       executionHandler.handleNewtabQuery(message, sendResponse)
+      return true  // Keep message channel open for async response
+    }
+
+    // Handle EXECUTE_QUERY from runtime (e.g., from newtab)
+    if (message.type === MessageType.EXECUTE_QUERY) {
+      handleRuntimeExecuteQuery(message, sender, sendResponse)
       return true  // Keep message channel open for async response
     }
   })

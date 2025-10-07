@@ -82,6 +82,23 @@ export function useMessageHandler() {
   // Set up runtime message listener for execution starting notification
   useEffect(() => {
     const handleRuntimeMessage = (message: any) => {
+      // Handle execution in sidepanel from newtab
+      if (message?.type === MessageType.EXECUTE_IN_SIDEPANEL) {
+        console.log(`[SidePanel] Received query from ${message.data?.source}:`, message.data?.query)
+
+        // Send the query through port messaging to trigger execution
+        if (message.data?.query) {
+          sendMessage(MessageType.EXECUTE_QUERY, {
+            query: message.data.query,
+            chatMode: false,
+            metadata: {
+              source: message.data.source || 'newtab'
+            }
+          })
+          setProcessing(true)
+        }
+      }
+
       // Handle execution starting from newtab
       if (message?.type === MessageType.EXECUTION_STARTING) {
         console.log(`[SidePanel] Execution starting from ${message.source}`)
@@ -99,7 +116,7 @@ export function useMessageHandler() {
     return () => {
       chrome.runtime.onMessage.removeListener(handleRuntimeMessage)
     }
-  }, [setProcessing])  // Only depend on setProcessing which is stable
+  }, [setProcessing, sendMessage])  // Add sendMessage to dependencies
 
   // Set up port message listeners
   useEffect(() => {

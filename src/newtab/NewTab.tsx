@@ -1,132 +1,97 @@
-import React, { useEffect, useState } from 'react'
-import { CommandInput } from './components/CommandInput'
-import { ThemeToggle } from './components/ThemeToggle'
-import { SettingsDialog } from './components/SettingsDialog'
-import { CreateAgentPage } from './pages/CreateAgentPage'
-import { UserAgentsSection } from './components/UserAgentsSection'
-import { useSettingsStore } from '@/sidepanel/stores/settingsStore'
-import { useAgentsStore } from './stores/agentsStore'
-import { Settings } from 'lucide-react'
+import React, { useEffect, useState } from "react";
+import { AgentInput } from "./components/AgentInput";
+import { ThemeToggle } from "./components/ThemeToggle";
+import { SettingsDialog } from "./components/SettingsDialog";
+import { useSettingsStore } from "@/sidepanel/stores/settingsStore";
+import { Settings } from "lucide-react";
 
 export function NewTab() {
-  const { theme, fontSize } = useSettingsStore()
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [currentView, setCurrentView] = useState<'main' | 'create-agent'>('main')
-  const { loadAgents } = useAgentsStore()
-
-  // Load agents from storage on mount
-  useEffect(() => {
-    // Load agents from storage
-    chrome.storage.local.get('agents', (result) => {
-      if (result.agents) {
-        loadAgents(result.agents)
-      }
-    })
-  }, [loadAgents])
+  const { theme, fontSize } = useSettingsStore();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Apply theme and font size
   useEffect(() => {
-    document.documentElement.style.setProperty('--app-font-size', `${fontSize}px`)
-    const root = document.documentElement
-    root.classList.remove('dark', 'gray')
-    if (theme === 'dark') root.classList.add('dark')
-    if (theme === 'gray') root.classList.add('gray')
-  }, [theme, fontSize])
+    document.documentElement.style.setProperty(
+      "--app-font-size",
+      `${fontSize}px`
+    );
+    const root = document.documentElement;
+    root.classList.remove("dark", "gray");
+    if (theme === "dark") root.classList.add("dark");
+    if (theme === "gray") root.classList.add("gray");
+  }, [theme, fontSize]);
 
   // Listen for theme changes from other tabs/views
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'nxtscape-settings' && e.newValue) {
+      if (e.key === "nxtscape-settings" && e.newValue) {
         try {
-          const newSettings = JSON.parse(e.newValue)
-          const newTheme = newSettings?.state?.theme
-          const newFontSize = newSettings?.state?.fontSize
+          const newSettings = JSON.parse(e.newValue);
+          const newTheme = newSettings?.state?.theme;
+          const newFontSize = newSettings?.state?.fontSize;
 
           // Update theme if changed
           if (newTheme && newTheme !== theme) {
-            const root = document.documentElement
-            root.classList.remove('dark', 'gray')
-            if (newTheme === 'dark') root.classList.add('dark')
-            if (newTheme === 'gray') root.classList.add('gray')
-            // Force store update
-            useSettingsStore.setState({ theme: newTheme })
+            const root = document.documentElement;
+            root.classList.remove("dark", "gray");
+            if (newTheme === "dark") root.classList.add("dark");
+            if (newTheme === "gray") root.classList.add("gray");
+            useSettingsStore.setState({ theme: newTheme });
           }
 
           // Update font size if changed
           if (newFontSize && newFontSize !== fontSize) {
-            document.documentElement.style.setProperty('--app-font-size', `${newFontSize}px`)
-            useSettingsStore.setState({ fontSize: newFontSize })
+            document.documentElement.style.setProperty(
+              "--app-font-size",
+              `${newFontSize}px`
+            );
+            useSettingsStore.setState({ fontSize: newFontSize });
           }
         } catch (err) {
-          console.error('Failed to parse settings from storage:', err)
+          console.error("Failed to parse settings from storage:", err);
         }
       }
-    }
+    };
 
-    window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
-  }, [theme, fontSize])
-  
-  // Render create agent page if view is set
-  if (currentView === 'create-agent') {
-    return <CreateAgentPage onBack={() => setCurrentView('main')} />
-  }
-  
-  
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [theme, fontSize]);
+
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Top Right Controls - Settings and Theme Toggle */}
+      {/* Top Left - Logo */}
+      <div className="absolute top-6 left-6 z-10 flex items-center gap-3">
+        <img src="/assets/mitria.svg" alt="Mitria" className="w-10 h-10" />
+        <span className="text-2xl font-medium text-foreground tracking-tight">
+          Mitria
+        </span>
+      </div>
+
+      {/* Top Right - Settings and Theme Toggle */}
       <div className="absolute top-6 right-6 z-10 flex items-center gap-2">
-        {/* Settings Button */}
         <button
           type="button"
-          className="
-            p-2 rounded-full
-            transition-colors duration-200 ease-in-out
-            focus:outline-none focus:ring-2 focus:ring-offset-2
-            focus:ring-offset-white dark:focus:ring-offset-gray-900 gray:focus:ring-offset-gray-800
-            focus:ring-gray-400
-            text-gray-600 dark:text-gray-300 gray:text-gray-400
-            hover:bg-gray-100 dark:hover:bg-gray-800 gray:hover:bg-gray-700
-          "
+          className="p-2.5 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-brand/50 text-muted-foreground hover:text-foreground hover:bg-muted"
           aria-label="Settings"
           onClick={() => setIsSettingsOpen(true)}
         >
-          <Settings size={20} className="transition-transform duration-200" />
+          <Settings size={22} />
         </button>
-        
-        {/* Theme Toggle */}
         <ThemeToggle />
       </div>
-      
-      {/* Main Content - Centered (slightly above center for better visual balance) */}
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <div className="w-full max-w-3xl px-4 -mt-20">
-          {/* BrowserOS Branding */}
-          <div className="flex items-center justify-center mb-10">
-            <img 
-              src="/assets/browseros.svg" 
-              alt="BrowserOS" 
-              className="w-12 h-12 mr-3"
-            />
-            <span className="text-4xl font-light text-foreground tracking-tight">
-              BrowserOS
-            </span>
-          </div>
-          
-          {/* Command Input - Clean and Centered */}
-          <CommandInput onCreateAgent={() => setCurrentView('create-agent')} />
+
+      {/* Centered Content */}
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="w-full max-w-3xl">
+          <AgentInput />
         </div>
-        
-        {/* User Agents Section - Shows up to 4 random agents */}
-        <UserAgentsSection onEditAgent={() => setCurrentView('create-agent')} />
       </div>
-      
+
       {/* Settings Dialog */}
-      <SettingsDialog 
-        isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)} 
+      <SettingsDialog
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
       />
     </div>
-  )
+  );
 }

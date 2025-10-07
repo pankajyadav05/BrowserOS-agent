@@ -11,6 +11,7 @@ export const BrowserOSProviderTypeSchema = z.enum([
   'google_gemini',
   'ollama',
   'openrouter',
+  'groq',
   'custom'
 ])
 export type BrowserOSProviderType = z.infer<typeof BrowserOSProviderTypeSchema>

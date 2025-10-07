@@ -62,7 +62,7 @@ NEVER proactively create documentation files (*.md) or README files. Only create
   - Styles → .css (using Tailwind CSS)
 - Prefer named exports for components
 - Types/Interfaces in PascalCase (e.g. User, ButtonProps)
-- OUR PRODUCT NAME IS BrowserOS -- so use that name correctly when naming things.
+- OUR PRODUCT NAME IS Mitria -- so use that name correctly when naming things.
 
 # Functions & Logic
 - Keep functions short and single-purpose (<20 lines).
