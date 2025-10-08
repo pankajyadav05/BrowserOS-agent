@@ -8,7 +8,11 @@
       "Bash(npm install:*)",
       "Bash(npm run build:dev:*)",
       "Bash(npm run lint:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(find:*)",
+      "Bash(for:*)",
+      "Bash(do sed -i 's/\\.positive()/\\.min(1)/g' \"$file\")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

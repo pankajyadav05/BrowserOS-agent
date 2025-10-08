@@ -1,7 +1,7 @@
 {
-  "name": "nxtscape-agent",
-  "version": "0.1.0",
-  "description": "nxtscape agent",
+  "name": "mitria-agent",
+  "version": "1.0.0",
+  "description": "Mitria AI agent",
   "main": "dist/background.js",
   "scripts": {
     "build": "npm run clean && cross-env NODE_ENV=production webpack --config webpack.config.js",
