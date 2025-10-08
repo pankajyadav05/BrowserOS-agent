@@ -43,7 +43,7 @@ const CHAT_EXAMPLES = [
 ];
 
 const AGENT_EXAMPLES = [
-  "Open fereai.xyz and tell me about the company",
+  "Navigate to https://mail.google.com/. Summarise unread emails with sender, subject, brief gist.",
   "Open amazon.in and order Sensodyne toothpaste 🪥",
 ];
 

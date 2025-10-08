@@ -288,18 +288,20 @@ export class BrowserAgent {
     this.toolManager.register(createBrowserOSInfoTool(this.executionContext)); // BrowserOS info tool
     
     // External integration tools
-    this.toolManager.register(createMCPTool(this.executionContext)); // MCP server integration
+    // MCP server offline
+    // this.toolManager.register(createMCPTool(this.executionContext)); // MCP server integration
 
-    // Limited context mode tools - only register when in limited context mode
-    if (this.executionContext.isLimitedContextMode()) {
-      this.toolManager.register(createGrepElementsTool(this.executionContext)); // Search elements when browser state is truncated
+    // Text-only mode tools - register when vision is NOT supported
+    // grep_elements is needed in text-only mode to search for elements without screenshots
+    if (!this.executionContext.supportsVision()) {
+      this.toolManager.register(createGrepElementsTool(this.executionContext)); // Search elements in text-only mode
     }
 
     // Completion tool
     this.toolManager.register(createDoneTool(this.executionContext));
 
     // Populate tool descriptions after all tools are registered
-    this.toolDescriptions = getToolDescriptions(this.executionContext.isLimitedContextMode());
+    this.toolDescriptions = getToolDescriptions(!this.executionContext.supportsVision());
 
     Logging.log(
       "BrowserAgent",
@@ -838,6 +840,11 @@ ${fullHistory}
     actions: string[],
     plannerOutput: PlannerOutput | PredefinedPlannerOutput
   ): Promise<ExecutorResult> {
+    // Validate planner output
+    if (!plannerOutput) {
+      throw new Error("Planner output is required for executor but was undefined");
+    }
+
     // Use the current iteration message manager from execution context
     const executorMM = new MessageManager();
     const systemPrompt = generateExecutorPrompt(this._buildExecutionContext());
@@ -1008,7 +1015,7 @@ ${fullHistory}
           const detectedTag = PROHIBITED_TAGS.find(tag => accumulatedText.includes(tag));
           if (detectedTag) {
             hasProhibitedContent = true;
-            
+
             // If we were streaming, replace with "Processing..."
             if (currentMsgId) {
               this.pubsub.publishMessage(
@@ -1019,18 +1026,18 @@ ${fullHistory}
                 ),
               );
             }
-            
+
             // Queue warning for agent's next iteration
             mm.queueSystemReminder(
               "I will never output <browser-state> or <system-reminder> tags or their contents. These are for my internal reference only. If I have completed all actions, I will complete the task and call 'done' tool."
             );
-            
+
             // Log for debugging
-            Logging.log("BrowserAgent", 
-              "LLM output contained prohibited tags, streaming stopped", 
+            Logging.log("BrowserAgent",
+              "LLM output contained prohibited tags, streaming stopped",
               "warning"
             );
-            
+
             // Increment error metric
             this.executionContext.incrementMetric("errors");
           }
@@ -1057,7 +1064,7 @@ ${fullHistory}
           }
         }
       }
-      
+
       // Always accumulate chunks for final AIMessage (even with prohibited content)
       accumulatedChunk = !accumulatedChunk
         ? chunk
@@ -1484,27 +1491,29 @@ ${fullHistory}
         return `=== ITERATIONS 1-${iterationNumber} SUMMARY ===\n${summary.summary}`;
       }
 
-      if (!('todoMarkdown' in entry.plannerOutput)) {
+      if (!entry.plannerOutput) {
+        plannerSection = "PLANNER OUTPUT: No planner output available";
+      } else if (!('todoMarkdown' in entry.plannerOutput)) {
         // Dynamic planner output
         const plan = entry.plannerOutput as PlannerOutput;
         plannerSection = `PLANNER OUTPUT:
-- Task: ${plan.userTask}
-- Current State: ${plan.currentState}
-- Execution History: ${plan.executionHistory}
-- Challenges Identified: ${plan.challengesIdentified}
-- Reasoning: ${plan.stepByStepReasoning}
-- Proposed Actions: ${plan.proposedActions.join(', ')}`;
+- Task: ${plan.userTask || 'No task specified'}
+- Current State: ${plan.currentState || 'No state information'}
+- Execution History: ${plan.executionHistory || 'No execution history'}
+- Challenges Identified: ${plan.challengesIdentified || 'No challenges identified'}
+- Reasoning: ${plan.stepByStepReasoning || 'No reasoning provided'}
+- Proposed Actions: ${plan.proposedActions ? plan.proposedActions.join(', ') : 'No actions proposed'}`;
       } else {
         // Predefined planner output
         const plan = entry.plannerOutput as PredefinedPlannerOutput;
         plannerSection = `PLANNER OUTPUT:
-- User Task: ${plan.userTask}
-- Execution History: ${plan.executionHistory}
-- Current State: ${plan.currentState}
-- Challenges Identified: ${plan.challengesIdentified}
-- Reasoning: ${plan.stepByStepReasoning}
-- TODO Markdown: ${plan.todoMarkdown}
-- Proposed Actions: ${plan.proposedActions.join(', ')}`;
+- User Task: ${plan.userTask || 'No task specified'}
+- Execution History: ${plan.executionHistory || 'No execution history'}
+- Current State: ${plan.currentState || 'No state information'}
+- Challenges Identified: ${plan.challengesIdentified || 'No challenges identified'}
+- Reasoning: ${plan.stepByStepReasoning || 'No reasoning provided'}
+- TODO Markdown: ${plan.todoMarkdown || 'No TODO list available'}
+- Proposed Actions: ${plan.proposedActions ? plan.proposedActions.join(', ') : 'No actions proposed'}`;
       }
 
       const toolSection = entry.toolMessages.length > 0
@@ -1647,15 +1656,19 @@ ${actionsToExecute}
    */
 
   private _formatPlannerOutputForExecutor(plan: PlannerOutput | PredefinedPlannerOutput): string {
+    if (!plan) {
+      return "BrowserOS Agent Output: No plan available";
+    }
+
     return `BrowserOS Agent Output:
-- Task: ${plan.userTask}
-- Current State: ${plan.currentState}
-- Execution History: ${plan.executionHistory}
-- Challenges Identified: ${plan.challengesIdentified}
-- Reasoning: ${plan.stepByStepReasoning}
+- Task: ${plan.userTask || 'No task specified'}
+- Current State: ${plan.currentState || 'No state information'}
+- Execution History: ${plan.executionHistory || 'No execution history'}
+- Challenges Identified: ${plan.challengesIdentified || 'No challenges identified'}
+- Reasoning: ${plan.stepByStepReasoning || 'No reasoning provided'}
 
 # Actions (to be performed by you)
-${plan.proposedActions.map((action, i) => `    ${i + 1}. ${action}`).join('\n')}
+${plan.proposedActions ? plan.proposedActions.map((action, i) => `    ${i + 1}. ${action}`).join('\n') : 'No actions proposed'}
 `;
   }
   private _buildDynamicExecutionContext(

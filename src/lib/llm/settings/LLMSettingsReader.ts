@@ -29,13 +29,14 @@ declare global {
 // Default constants
 const DEFAULT_OPENAI_MODEL = "gpt-4o";
 const DEFAULT_ANTHROPIC_MODEL = "claude-3-5-sonnet-latest";
-const DEFAULT_GEMINI_MODEL = "gemini-2.0-flash";
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+const DEFAULT_GROQ_MODEL = "openai/gpt-oss-20b";
 const DEFAULT_OLLAMA_MODEL = "qwen3:4b";
 const DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434";
 
-// To use Groq, set your GROQ_API_KEY in the .env file
-// The key will be injected at build time and available as process.env.GROQ_API_KEY
-// Current model: gpt-oss-20b (fast and efficient)
+// To use Gemini, set your GEMINI_LLM_API_KEY in the .env file
+// The key will be injected at build time and available as process.env.GEMINI_LLM_API_KEY
+// Current model: gemini-2.5-flash (fast and efficient)
 
 /**
  * Reads LLM provider settings from BrowserOS preferences
@@ -71,27 +72,13 @@ export class LLMSettingsReader {
    * @returns Promise resolving to the default BrowserOS provider
    */
   static async read(): Promise<BrowserOSProvider> {
-    // Force Groq mock provider when in mock mode
-    if (isMockLLMSettings()) {
-      console.log(
-        "[LLMSettingsReader] Mock mode enabled, forcing Groq provider"
-      );
-      const mockProvider = this.getMockProvider();
-      console.log("[LLMSettingsReader] Forced Groq mock provider:", {
-        name: mockProvider.name,
-        type: mockProvider.type,
-        hasApiKey: !!mockProvider.apiKey,
-      });
-      return mockProvider;
-    }
-
     try {
       Logging.log(
         "LLMSettingsReader",
         "Reading provider settings from BrowserOS preferences"
       );
 
-      // Try chrome.browserOS.getPref API
+      // Try chrome.browserOS.getPref API or storage (even in mock mode)
       const provider = await this.readFromBrowserOS();
       if (provider) {
         console.log("[LLMSettingsReader] Provider loaded:", {
@@ -115,6 +102,20 @@ export class LLMSettingsReader {
       );
     }
 
+    // If in mock mode and no stored config, return default Gemini
+    if (isMockLLMSettings()) {
+      console.log(
+        "[LLMSettingsReader] Mock mode: No stored config, using Gemini provider"
+      );
+      const mockProvider = this.getMockProvider();
+      console.log("[LLMSettingsReader] Gemini mock provider:", {
+        name: mockProvider.name,
+        type: mockProvider.type,
+        hasApiKey: !!mockProvider.apiKey,
+      });
+      return mockProvider;
+    }
+
     // Return default BrowserOS provider if reading fails
     const defaultProvider = this.getDefaultBrowserOSProvider();
     console.log("[LLMSettingsReader] Using default BrowserOS provider");
@@ -127,12 +128,17 @@ export class LLMSettingsReader {
    * @returns Promise resolving to all providers configuration
    */
   static async readAllProviders(): Promise<BrowserOSProvidersConfig> {
+    // Always try to read from storage first (even in mock mode)
     try {
       const config = await this.readProvidersConfig();
       if (config) {
+        console.log("[LLMSettingsReader] Loaded providers config from storage:", {
+          defaultProviderId: config.defaultProviderId,
+          providersCount: config.providers.length
+        });
         Logging.log(
           "LLMSettingsReader",
-          `Loaded ${config.providers.length} providers`
+          `Loaded ${config.providers.length} providers from storage`
         );
         return config;
       }
@@ -146,10 +152,25 @@ export class LLMSettingsReader {
       );
     }
 
-    // Return default config with BrowserOS provider only
+    // If in mock mode and no stored config, return default Gemini and Groq providers
+    if (isMockLLMSettings()) {
+      console.log("[LLMSettingsReader] No stored config, returning mock providers with Gemini as default");
+      const geminiProvider = this.getMockProviderByType("gemini");
+      const groqProvider = this.getMockProviderByType("groq");
+
+      return {
+        defaultProviderId: "mock_gemini", // Gemini is default
+        providers: [geminiProvider, groqProvider],
+      };
+    }
+
+    // Return default config with Gemini and Groq
+    const geminiProvider = this.getMockProviderByType("gemini");
+    const groqProvider = this.getMockProviderByType("groq");
+
     return {
-      defaultProviderId: "browseros",
-      providers: [this.getDefaultBrowserOSProvider()],
+      defaultProviderId: "mock_gemini",
+      providers: [geminiProvider, groqProvider],
     };
   }
 
@@ -158,54 +179,40 @@ export class LLMSettingsReader {
    * @returns Promise resolving to the default provider or null
    */
   private static async readFromBrowserOS(): Promise<BrowserOSProvider | null> {
-    // Check if API is available
-    const browserOS = (chrome as any)?.browserOS as ChromeBrowserOS | undefined;
-    if (!browserOS?.getPref) {
-      // Fallback: try chrome.storage.local
-      try {
-        const key = BROWSEROS_PREFERENCE_KEYS.PROVIDERS;
-        const stored = await new Promise<any>((resolve) => {
-          chrome.storage?.local?.get(key, (result) => resolve(result));
-        });
-        const raw = stored?.[key];
-        if (!raw) {
-          if (isMockLLMSettings()) {
-            console.log(
-              "[LLMSettingsReader] No stored providers found, using mock provider"
-            );
-            Logging.log(
-              "LLMSettingsReader",
-              "No stored providers found, using mock provider",
-              "warning"
-            );
-            const mockProvider = this.getMockProvider();
-            console.log("[LLMSettingsReader] Mock provider selected:", {
-              name: mockProvider.name,
-              type: mockProvider.type,
-              hasApiKey: !!mockProvider.apiKey,
-            });
-            return mockProvider;
-          }
-          return null;
-        }
+    // Always try chrome.storage.local first in development/mock mode
+    try {
+      const key = BROWSEROS_PREFERENCE_KEYS.PROVIDERS;
+      const stored = await new Promise<any>((resolve) => {
+        chrome.storage?.local?.get(key, (result) => resolve(result));
+      });
+      const raw = stored?.[key];
+      if (raw) {
         const config = BrowserOSProvidersConfigSchema.parse(
           typeof raw === "string" ? JSON.parse(raw) : raw
         );
         const def =
           config.providers.find((p) => p.id === config.defaultProviderId) ||
           null;
-        return def;
-      } catch (e) {
-        if (isMockLLMSettings()) {
-          Logging.log(
-            "LLMSettingsReader",
-            "Storage read failed, using mock provider",
-            "warning"
-          );
-          return this.getMockProvider();
+
+        if (def) {
+          console.log("[LLMSettingsReader] Found provider in storage:", {
+            id: def.id,
+            name: def.name,
+            type: def.type,
+            isDefault: def.isDefault,
+          });
         }
-        return null;
+
+        return def;
       }
+    } catch (e) {
+      console.error("[LLMSettingsReader] Error reading from storage:", e);
+    }
+
+    // Fallback: try chrome.browserOS.getPref if available
+    const browserOS = (chrome as any)?.browserOS as ChromeBrowserOS | undefined;
+    if (!browserOS?.getPref) {
+      return null;
     }
 
     return new Promise<BrowserOSProvider | null>((resolve) => {
@@ -278,22 +285,29 @@ export class LLMSettingsReader {
    * @returns Promise resolving to providers config or null
    */
   private static async readProvidersConfig(): Promise<BrowserOSProvidersConfig | null> {
-    const browserOS = (chrome as any)?.browserOS as ChromeBrowserOS | undefined;
-    if (!browserOS?.getPref) {
-      // Fallback: try chrome.storage.local
-      try {
-        const key = BROWSEROS_PREFERENCE_KEYS.PROVIDERS;
-        const stored = await new Promise<any>((resolve) => {
-          chrome.storage?.local?.get(key, (result) => resolve(result));
-        });
-        const raw = stored?.[key];
-        if (!raw) return null;
+    // Always try chrome.storage.local first in development/mock mode
+    try {
+      const key = BROWSEROS_PREFERENCE_KEYS.PROVIDERS;
+      const stored = await new Promise<any>((resolve) => {
+        chrome.storage?.local?.get(key, (result) => resolve(result));
+      });
+      const raw = stored?.[key];
+      if (raw) {
         return BrowserOSProvidersConfigSchema.parse(
           typeof raw === "string" ? JSON.parse(raw) : raw
         );
-      } catch (_e) {
-        return null;
       }
+    } catch (e) {
+      console.error(
+        "[LLMSettingsReader] Error reading providers config from storage:",
+        e
+      );
+    }
+
+    // Fallback: try chrome.browserOS.getPref if available
+    const browserOS = (chrome as any)?.browserOS as ChromeBrowserOS | undefined;
+    if (!browserOS?.getPref) {
+      return null;
     }
 
     return new Promise<BrowserOSProvidersConfig | null>((resolve) => {
@@ -340,18 +354,11 @@ export class LLMSettingsReader {
   }
 
   /**
-   * Get mock provider for development
+   * Get mock provider by type
+   * @param type - Provider type key
    * @returns Mock provider configuration
    */
-  private static getMockProvider(): BrowserOSProvider {
-    // Return custom mock if set
-    if (this.mockProvider) {
-      return this.mockProvider;
-    }
-
-    // Hardcoded to use groq for now
-    const mockType = "groq";
-
+  private static getMockProviderByType(type: string): BrowserOSProvider {
     const mockProviders: Record<string, BrowserOSProvider> = {
       browseros: this.getDefaultBrowserOSProvider(),
       openai: {
@@ -384,14 +391,30 @@ export class LLMSettingsReader {
       },
       gemini: {
         id: "mock_gemini",
-        name: "Mock Gemini",
+        name: "Gemini",
         type: "google_gemini",
         isDefault: true,
         isBuiltIn: false,
-        apiKey: "mock-key",
+        apiKey:
+          process.env.GEMINI_LLM_API_KEY ||
+          process.env.GEMINI_API_KEY ||
+          "mock-key",
         modelId: DEFAULT_GEMINI_MODEL,
         capabilities: { supportsImages: true },
         modelConfig: { contextWindow: 1000000, temperature: 0.7 },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      groq: {
+        id: "mock_groq",
+        name: "Groq",
+        type: "groq",
+        isDefault: false,
+        isBuiltIn: false,
+        apiKey: process.env.GROQ_API_KEY || "mock-key",
+        modelId: DEFAULT_GROQ_MODEL,
+        capabilities: { supportsImages: false },
+        modelConfig: { contextWindow: 131072, temperature: 0.7 },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
@@ -408,21 +431,22 @@ export class LLMSettingsReader {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
-      groq: {
-        id: "mock_groq",
-        name: "Groq",
-        type: "groq",
-        isDefault: true,
-        isBuiltIn: false,
-        apiKey: process.env.GROQ_API_KEY || "gsk_placeholder",
-        modelId: "openai/gpt-oss-20b",
-        capabilities: { supportsImages: false },
-        modelConfig: { contextWindow: 131072, temperature: 0.7 },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
     };
 
-    return mockProviders[mockType] || this.getDefaultBrowserOSProvider();
+    return mockProviders[type] || this.getDefaultBrowserOSProvider();
+  }
+
+  /**
+   * Get mock provider for development (returns Gemini by default)
+   * @returns Mock provider configuration
+   */
+  private static getMockProvider(): BrowserOSProvider {
+    // Return custom mock if set
+    if (this.mockProvider) {
+      return this.mockProvider;
+    }
+
+    // Default to Gemini
+    return this.getMockProviderByType("gemini");
   }
 }

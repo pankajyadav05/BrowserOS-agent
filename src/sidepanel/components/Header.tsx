@@ -204,8 +204,7 @@ export const Header = memo(function Header({
         className="relative flex items-center justify-between h-12 px-3 bg-[hsl(var(--header))] border-b border-border/50"
         role="banner"
       >
-        <div>{/* // TODO */}</div>
-        {/* <div className="flex items-center ">
+        <div className="flex items-center ">
           {providersConfig && (
             <div className="relative mt-0.5">
               <select
@@ -240,16 +239,18 @@ export const Header = memo(function Header({
                 aria-label="Select default provider"
                 title="Select default provider"
               >
-                {providersConfig.providers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
+                {providersConfig.providers
+                  .filter((p) => p.type === "google_gemini" || p.type === "groq")
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
               </select>
               <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground opacity-80" />
             </div>
           )}
-        </div> */}
+        </div>
 
         <nav
           className="flex items-center gap-2 sm:gap-3"

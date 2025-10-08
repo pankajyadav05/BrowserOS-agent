@@ -1,7 +1,7 @@
 import { MessageType } from '@/lib/types/messaging'
 import { PortMessage } from '@/lib/runtime/PortMessaging'
 import { LLMSettingsReader } from '@/lib/llm/settings/LLMSettingsReader'
-import { langChainProvider } from '@/lib/llm/LangChainProvider'
+import { LangChainProvider } from '@/lib/llm/LangChainProvider'
 import { BrowserOSProvidersConfigSchema, BROWSEROS_PREFERENCE_KEYS } from '@/lib/llm/settings/browserOSTypes'
 import { Logging } from '@/lib/utils/Logging'
 
@@ -56,36 +56,27 @@ export class ProvidersHandler {
   ): void {
     try {
       const config = BrowserOSProvidersConfigSchema.parse(message.payload)
-      const browserOS = (chrome as any)?.browserOS as { 
-        setPref?: (name: string, value: any, pageId?: string, cb?: (ok: boolean) => void) => void 
-      } | undefined
-      
-      if (browserOS?.setPref) {
-        browserOS.setPref(
-          BROWSEROS_PREFERENCE_KEYS.PROVIDERS,
-          JSON.stringify(config),
-          undefined,
-          (success?: boolean) => {
-            if (success) {
-              try { langChainProvider.clearCache() } catch (_) {}
-              this.lastProvidersConfigJson = JSON.stringify(config)
-              this.broadcastProvidersConfig(config)
-            }
-            port.postMessage({
-              type: MessageType.WORKFLOW_STATUS,
-              payload: success ? { status: 'success' } : { status: 'error', error: 'Save failed' },
-              id: message.id
-            })
-          }
-        )
-      } else {
-        // Fallback to chrome.storage.local
+
+      // Always use chrome.storage.local in development/mock mode
+      // Skip browserOS.setPref since it may not be available or functional
+      {
+        // Use chrome.storage.local
         try {
           const key = BROWSEROS_PREFERENCE_KEYS.PROVIDERS
+
+          console.log('[ProvidersHandler] Saving provider config to storage:', {
+            defaultProviderId: config.defaultProviderId,
+            providersCount: config.providers.length,
+            providers: config.providers.map(p => ({ id: p.id, name: p.name, type: p.type, isDefault: p.isDefault }))
+          })
+
           chrome.storage?.local?.set({ [key]: JSON.stringify(config) }, () => {
-            try { langChainProvider.clearCache() } catch (_) {}
+            try { LangChainProvider.getInstance().clearCache() } catch (_) {}
             this.lastProvidersConfigJson = JSON.stringify(config)
             this.broadcastProvidersConfig(config)
+
+            console.log('[ProvidersHandler] Provider config saved successfully')
+
             port.postMessage({
               type: MessageType.WORKFLOW_STATUS,
               payload: { status: 'success' },

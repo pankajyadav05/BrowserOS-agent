@@ -18,7 +18,7 @@ export type AppConfig = z.infer<typeof AppConfigSchema>
  */
 export const config: AppConfig = {
   DEV_MODE: process.env.NODE_ENV !== 'production',
-  MOCK_LLM_SETTINGS: true,  // Enable mock mode to use Groq by default
+  MOCK_LLM_SETTINGS: true,  // Enable mock mode to use Gemini by default
   VERSION: '0.1.0',
   LOG_LEVEL: process.env.NODE_ENV !== 'production' ? 'debug' : 'info'
 }

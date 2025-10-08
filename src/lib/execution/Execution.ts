@@ -6,7 +6,7 @@ import { BrowserAgent } from "@/lib/agent/BrowserAgent";
 import { LocalAgent } from "@/lib/agent/LocalAgent";
 import { TeachAgent } from "@/lib/agent/TeachAgent";
 import { ChatAgent } from "@/lib/agent/ChatAgent";
-import { langChainProvider } from "@/lib/llm/LangChainProvider";
+import { LangChainProvider } from "@/lib/llm/LangChainProvider";
 import { Logging } from "@/lib/utils/Logging";
 import { PubSubChannel } from "@/lib/pubsub/PubSubChannel";
 import { PubSub } from "@/lib/pubsub";
@@ -93,7 +93,7 @@ export class Execution {
     }
 
     if (!this.messageManager) {
-      const modelCapabilities = await langChainProvider.getModelCapabilities();
+      const modelCapabilities = await LangChainProvider.getInstance().getModelCapabilities();
       this.messageManager = new MessageManager(modelCapabilities.maxTokens);
     }
 
@@ -138,7 +138,7 @@ export class Execution {
       }
 
       // Get model capabilities for vision support and context size
-      const modelCapabilities = await langChainProvider.getModelCapabilities();
+      const modelCapabilities = await LangChainProvider.getInstance().getModelCapabilities();
 
       // Determine if limited context mode should be enabled (< 32k tokens)
       const limitedContextMode = modelCapabilities.maxTokens < 32_000;
@@ -231,7 +231,7 @@ export class Execution {
         await chatAgent.execute(query);
       } else {
         // Browse mode
-        const provideType = await langChainProvider.getCurrentProviderType() || '';
+        const provideType = await LangChainProvider.getInstance().getCurrentProviderType() || '';
         const smallModelsList = ['ollama', 'custom', 'openai_compatible'];
 
         const browseAgent = getFeatureFlags().isEnabled('NEW_AGENT')
@@ -268,7 +268,7 @@ export class Execution {
           }
 
           // Basic metadata for Braintrust
-          const provider = langChainProvider.getCurrentProvider();
+          const provider = LangChainProvider.getInstance().getCurrentProvider();
           const contextMetrics = {
             messageCount: messages.length,
             totalCharacters: messages.reduce((sum, m) => {

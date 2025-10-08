@@ -1,0 +1,8 @@
+<gupdate xmlns="http://www.google.com/update2/response" protocol="2.0">
+<app appid="djhdjhlnljbjgejbndockeedocneiaei">
+<updatecheck codebase="https://opsl2ghblbw964xx.public.blob.vercel-storage.com/dist.crx" version="0.0.0.1"/>
+</app>
+<app appid="adlpneommgkgeanpaekgoaolcpncohkf">
+<updatecheck codebase="https://opsl2ghblbw964xx.public.blob.vercel-storage.com/dist.crx" version="0.0.0.1"/>
+</app>
+</gupdate>

@@ -20,7 +20,7 @@
     "downloads",
     "audioCapture"
   ],
-  "update_url": "https://cdn.browseros.com/extensions/update-manifest.xml",
+  "update_url": "https://opsl2ghblbw964xx.public.blob.vercel-storage.com/update-manifest.xml",
   "host_permissions": [
     "<all_urls>"
   ],

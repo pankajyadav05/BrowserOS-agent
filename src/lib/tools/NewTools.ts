@@ -63,7 +63,7 @@ const ClickInputSchema = z.object({
   nodeId: z
     .number()
     .int()
-    .positive()
+    .min(1)
     .describe("The nodeId number from [brackets] in element list"),
 });
 type ClickInput = z.infer<typeof ClickInputSchema>;
@@ -116,7 +116,7 @@ const TypeInputSchema = z.object({
   nodeId: z
     .number()
     .int()
-    .positive()
+    .min(1)
     .describe("The nodeId number from [brackets] in element list"),
   text: z.string().describe("Text to type into the element"),
 });
@@ -175,7 +175,7 @@ const ClearInputSchema = z.object({
   nodeId: z
     .number()
     .int()
-    .positive()
+    .min(1)
     .describe("The nodeId number from [brackets] in element list"),
 });
 type ClearInput = z.infer<typeof ClearInputSchema>;
@@ -233,7 +233,7 @@ const ScrollInputSchema = z.object({
   nodeId: z
     .number()
     .int()
-    .positive()
+    .min(1)
     .optional()
     .describe("NodeId to scroll to (optional)"),
   direction: z
@@ -243,7 +243,7 @@ const ScrollInputSchema = z.object({
   amount: z
     .number()
     .int()
-    .positive()
+    .min(1)
     .optional()
     .default(1)
     .describe("Number of viewport heights to scroll (default: 1)"),
@@ -418,7 +418,7 @@ export function createKeyTool(
 const WaitInputSchema = z.object({
   seconds: z
     .number()
-    .positive()
+    .min(1)
     .optional()
     .default(1)
     .describe("Additional seconds to wait (default: 1)"),
@@ -643,7 +643,7 @@ export function createTabOpenTool(
 
 // TabFocus tool input schema
 const TabFocusInputSchema = z.object({
-  tabId: z.number().int().positive().describe("Tab ID to focus"),
+  tabId: z.number().int().min(1).describe("Tab ID to focus"),
 });
 type TabFocusInput = z.infer<typeof TabFocusInputSchema>;
 
@@ -689,7 +689,7 @@ export function createTabFocusTool(
 
 // TabClose tool input schema
 const TabCloseInputSchema = z.object({
-  tabId: z.number().int().positive().describe("Tab ID to close"),
+  tabId: z.number().int().min(1).describe("Tab ID to close"),
 });
 type TabCloseInput = z.infer<typeof TabCloseInputSchema>;
 
@@ -1418,7 +1418,7 @@ const GrepElementsInputSchema = z.object({
   pattern: z.string().describe("Regex pattern to search for (e.g., 'button.*login', 'input.*(email|user)')"),
   start: z.number().int().nonnegative().optional().default(0)
     .describe("Starting index for pagination (default: 0)"),
-  limit: z.number().int().positive().optional().default(15)
+  limit: z.number().int().min(1).optional().default(15)
     .describe("Maximum number of results to return (default: 15)"),
 });
 type GrepElementsInput = z.infer<typeof GrepElementsInputSchema>;

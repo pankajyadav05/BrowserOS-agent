@@ -167,16 +167,6 @@ export class LangChainProvider {
           }
           break;
 
-        case "groq":
-          // Groq models have varying context windows
-          const groqModel = provider.modelId || DEFAULT_GROQ_MODEL;
-          if (groqModel.includes("70b") || groqModel.includes("8b")) {
-            maxTokens = 131_072;
-          } else {
-            maxTokens = 8_192;
-          }
-          break;
-
         case "custom":
           // Custom providers - conservative default
           maxTokens = 32_768;
@@ -227,10 +217,10 @@ export class LangChainProvider {
         return DEFAULT_ANTHROPIC_MODEL;
       case "google_gemini":
         return DEFAULT_GEMINI_MODEL;
-      case "ollama":
-        return DEFAULT_OLLAMA_MODEL;
       case "groq":
         return DEFAULT_GROQ_MODEL;
+      case "ollama":
+        return DEFAULT_OLLAMA_MODEL;
       default:
         return "unknown";
     }
@@ -246,7 +236,7 @@ export class LangChainProvider {
       case "openrouter":
         return true;
       case "groq":
-        // Groq models don't support images by default
+        // Groq models don't support vision yet
         return false;
       case "ollama":
         // Most Ollama models don't support images by default
@@ -393,11 +383,11 @@ export class LangChainProvider {
       case "google_gemini":
         return this._createGeminiLLM(provider, temperature, maxTokens);
 
-      case "ollama":
-        return this._createOllamaLLM(provider, temperature, maxTokens);
-
       case "groq":
         return this._createGroqLLM(provider, temperature, maxTokens, streaming);
+
+      case "ollama":
+        return this._createOllamaLLM(provider, temperature, maxTokens);
 
       default:
         Logging.log(
@@ -579,6 +569,28 @@ export class LangChainProvider {
     return this._patchTokenCounting(model);
   }
 
+  // Groq provider
+  private _createGroqLLM(
+    provider: BrowserOSProvider,
+    temperature: number,
+    maxTokens?: number,
+    streaming: boolean = true
+  ): ChatGroq {
+    if (!provider.apiKey) {
+      throw new Error(`API key required for ${provider.name} provider`);
+    }
+
+    const model = new ChatGroq({
+      model: provider.modelId || DEFAULT_GROQ_MODEL,
+      temperature,
+      maxTokens,
+      streaming,
+      apiKey: provider.apiKey,
+    });
+
+    return this._patchTokenCounting(model);
+  }
+
   // Ollama provider (local, no API key required)
   private _createOllamaLLM(
     provider: BrowserOSProvider,
@@ -611,42 +623,6 @@ export class LangChainProvider {
 
     const model = new ChatOllama(ollamaConfig);
 
-    return this._patchTokenCounting(model);
-  }
-
-  // Groq provider
-  private _createGroqLLM(
-    provider: BrowserOSProvider,
-    temperature: number,
-    maxTokens?: number,
-    streaming: boolean = true
-  ): ChatGroq {
-    console.log("[Groq] Creating Groq provider with:", {
-      name: provider.name,
-      apiKey: provider.apiKey
-        ? `${provider.apiKey.substring(0, 10)}...`
-        : "NOT_SET",
-      modelId: provider.modelId || DEFAULT_GROQ_MODEL,
-      temperature,
-      maxTokens,
-      streaming,
-    });
-
-    if (!provider.apiKey) {
-      throw new Error(`API key required for ${provider.name} provider`);
-    }
-
-    const model = new ChatGroq({
-      model: provider.modelId || DEFAULT_GROQ_MODEL,
-      temperature,
-      maxTokens,
-      streaming,
-      apiKey: provider.apiKey,
-      // Optional: Add any Groq-specific configuration
-      // baseUrl: provider.baseUrl || 'https://api.groq.com/openai/v1'
-    });
-
-    console.log("[Groq] Groq provider created successfully");
     return this._patchTokenCounting(model);
   }
 }

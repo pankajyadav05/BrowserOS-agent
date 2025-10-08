@@ -379,8 +379,9 @@ export function getToolDescriptions(isLimitedContextMode: boolean = false): stri
 - click_at_coordinates: Click at specific locations
 - type_at_coordinates: Type at specific locations
 - date: Get current date and time
-- browseros_info: Get information about the BrowserOS agent
-- mcp: Access external services (Gmail, GitHub, etc.)`;
+- browseros_info: Get information about the BrowserOS agent`;
+// MCP server offline
+// - mcp: Access external services (Gmail, GitHub, etc.)
 
   // Add grep_elements tool description for limited context mode
   const limitedContextTools = isLimitedContextMode ? `
