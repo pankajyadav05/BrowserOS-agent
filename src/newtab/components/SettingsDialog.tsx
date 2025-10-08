@@ -19,6 +19,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
     if (isOpen) {
       // Get BrowserOS version from API if available
       if (
+        chrome.browserOS &&
         "getVersionNumber" in chrome.browserOS &&
         typeof chrome.browserOS.getVersionNumber === "function"
       ) {

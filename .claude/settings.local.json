@@ -6,7 +6,9 @@
       "Bash(npm install)",
       "Bash(dir /s /b srcsidepanelcomponentsfeedback)",
       "Bash(npm install:*)",
-      "Bash(npm run build:dev:*)"
+      "Bash(npm run build:dev:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []
