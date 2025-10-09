@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<gupdate xmlns='http://www.google.com/update2/response' protocol='2.0'>
+  <app appid='djhdjhlnljbjgejbndockeedocneiaei'>
+    <updatecheck codebase='https://opsl2ghblbw964xx.public.blob.vercel-storage.com/agent-50.0.3.10.crx' version='50.0.3.10' />
+  </app>
+</gupdate>
